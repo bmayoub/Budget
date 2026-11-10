@@ -1,0 +1,1422 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f172a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>ميزانية العائلة - نظام الأظرفة المالية</title>
+  <link rel="manifest" href="manifest.json" />
+  
+  <!-- الخط العربي Cairo -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Cairo', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+    html, body {
+      overflow-x: hidden !important;
+      max-width: 100% !important;
+      width: 100% !important;
+      position: relative;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: 'Cairo', sans-serif;
+      background-color: #f1f5f9;
+      -webkit-tap-highlight-color: transparent;
+    }
+    main {
+      max-width: 100% !important;
+      overflow-x: hidden;
+    }
+    .glass-header {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    }
+    .tab-active {
+      color: #10b981;
+      border-bottom: 3px solid #10b981;
+      font-weight: 700;
+    }
+    .mobile-nav-active {
+      color: #10b981 !important;
+    }
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    @supports (padding-bottom: env(safe-area-inset-bottom)) {
+      .safe-area-pb {
+        padding-bottom: calc(0.375rem + env(safe-area-inset-bottom)) !important;
+      }
+    }
+  </style>
+</head>
+<body class="pb-24 md:pb-10 text-slate-800">
+
+  <!-- الشريط العلوي -->
+  <header class="glass-header text-white shadow-lg sticky top-0 z-30 w-full">
+    <div class="max-w-7xl mx-auto px-3 sm:px-4 py-2.5 sm:py-3 flex items-center justify-between gap-2">
+      <div class="flex items-center gap-2 sm:gap-3 min-w-0">
+        <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center text-emerald-400 text-lg sm:text-xl shrink-0">
+          <i class="fa-solid fa-envelope-open-text"></i>
+        </div>
+        <div class="min-w-0">
+          <h1 class="text-sm sm:text-lg font-extrabold leading-tight truncate">ميزانية العائلة</h1>
+          <div class="flex items-center gap-1.5 text-[10px] sm:text-xs text-slate-300 truncate">
+            <span id="connectionDot" class="w-2 h-2 rounded-full bg-amber-400 animate-pulse shrink-0"></span>
+            <span id="connectionStatusText" class="truncate">جاهز للربط</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- أدوات التحكم العلوية: اختيار الشهر + مزامنة + إعدادات -->
+      <div class="flex items-center gap-1.5 shrink-0">
+        <select
+          id="monthSelector"
+          onchange="onMonthChange(this.value)"
+          class="bg-slate-800/90 border border-slate-600 text-white text-xs sm:text-sm font-semibold rounded-xl px-2.5 py-1.5 focus:outline-none focus:border-emerald-400 max-w-[105px] sm:max-w-none"
+        ></select>
+
+        <!-- زر المزامنة -->
+        <button
+          onclick="syncWithGoogleSheets()"
+          id="btnSync"
+          class="bg-slate-800 hover:bg-slate-700 border border-slate-600 text-emerald-400 w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center transition shrink-0"
+          title="مزامنة مع Google Sheets"
+        >
+          <i id="syncIcon" class="fa-solid fa-arrows-rotate text-xs sm:text-sm"></i>
+        </button>
+
+        <!-- زر إعدادات الربط -->
+        <button
+          onclick="openSettingsModal()"
+          class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs sm:text-sm font-bold px-2.5 sm:px-3 py-1.5 rounded-xl flex items-center gap-1.5 shadow transition shrink-0"
+          title="إعدادات ربط الشيت"
+        >
+          <i class="fa-solid fa-link text-xs"></i>
+          <span class="hidden sm:inline">ربط الشيت</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- شريط التنقل لسطح المكتب -->
+    <div class="max-w-7xl mx-auto px-4 hidden md:flex gap-6 border-t border-slate-700/60 text-sm">
+      <button onclick="switchTab('dashboard')" id="deskTab-dashboard" class="py-3 px-2 tab-active flex items-center gap-2 transition">
+        <i class="fa-solid fa-chart-pie"></i> لوحة المؤشرات والرسوم البيانية
+      </button>
+      <button onclick="switchTab('expenses')" id="deskTab-expenses" class="py-3 px-2 text-slate-300 hover:text-white flex items-center gap-2 transition">
+        <i class="fa-solid fa-receipt"></i> المصاريف اليومية
+      </button>
+      <button onclick="switchTab('loans')" id="deskTab-loans" class="py-3 px-2 text-slate-300 hover:text-white flex items-center gap-2 transition">
+        <i class="fa-solid fa-right-left"></i> استلاف الأظرفة
+      </button>
+      <button onclick="switchTab('feeding')" id="deskTab-feeding" class="py-3 px-2 text-slate-300 hover:text-white flex items-center gap-2 transition">
+        <i class="fa-solid fa-sack-dollar"></i> تغذية الأظرفة والخطة
+      </button>
+    </div>
+  </header>
+
+  <!-- المحتوى الرئيسي -->
+  <main class="max-w-7xl mx-auto px-3 sm:px-4 pt-3.5 sm:pt-5 space-y-4 sm:space-y-6 w-full min-w-0 overflow-x-hidden">
+
+    <!-- تنبيه في حال وجود تجاوز في أحد الأظرفة -->
+    <div id="overBudgetBanner" class="hidden bg-red-50 border border-red-200 rounded-2xl p-3 sm:p-3.5 flex items-start gap-2.5 sm:gap-3 text-red-800 shadow-sm min-w-0">
+      <i class="fa-solid fa-triangle-exclamation text-red-500 text-base sm:text-lg mt-0.5 shrink-0"></i>
+      <div class="text-xs sm:text-sm flex-1 min-w-0">
+        <p class="font-bold">تنبيه رصيد الأظرفة!</p>
+        <p id="overBudgetText" class="text-red-600 mt-0.5 break-words"></p>
+      </div>
+    </div>
+
+    <!-- بطاقات الحسابات الأربعة ومحافظ السيولة (كاش، CCP، أورو، USDT) -->
+    <section class="bg-white rounded-2xl p-3 sm:p-4 shadow-sm border border-slate-200/70 space-y-3 min-w-0 w-full overflow-hidden">
+      <div class="flex items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
+        <div class="flex items-center gap-2 min-w-0">
+          <span class="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-sm font-bold shrink-0">
+            <i class="fa-solid fa-wallet"></i>
+          </span>
+          <div class="min-w-0">
+            <h2 class="text-xs sm:text-sm font-extrabold text-slate-800 truncate">أرصدة الحسابات ومحافظ السيولة</h2>
+            <p class="text-[10px] text-slate-400 truncate">الحسابات الأربعة من صفحة "إدارة الحسابات"</p>
+          </div>
+        </div>
+        <button
+          onclick="openTransfersListModal()"
+          class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-white text-[11px] sm:text-xs font-bold px-3 py-1.5 rounded-xl flex items-center gap-1.5 shadow-2xs transition shrink-0"
+          title="عرض قائمة كافة التحويلات بين الحسابات وتسجيل تحويل جديد"
+        >
+          <i class="fa-solid fa-arrow-right-arrow-left text-[10px] text-emerald-400"></i>
+          <span>سجل التحويلات</span>
+        </button>
+      </div>
+
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
+        <!-- 1. حساب CCP -->
+        <div class="bg-gradient-to-br from-blue-50/60 to-white p-2.5 sm:p-3 rounded-xl border border-blue-200/70 space-y-1 min-w-0">
+          <div class="flex items-center justify-between text-slate-500 text-[11px]">
+            <span class="font-bold flex items-center gap-1 truncate"><i class="fa-solid fa-building-columns text-blue-600 shrink-0"></i> حساب CCP</span>
+            <span class="text-[9px] bg-blue-100 text-blue-800 px-1 py-0.5 rounded font-bold shrink-0">دج</span>
+          </div>
+          <div id="accBalance-ccp" class="text-sm sm:text-lg font-extrabold text-blue-900 truncate">54,138 دج</div>
+          <div class="flex items-center justify-between text-[10px] text-slate-500 pt-0.5 border-t border-blue-100/60 truncate">
+            <span>وارد: <b id="accIn-ccp" class="text-emerald-600 font-bold">104,200</b></span>
+            <span>صرف: <b id="accOut-ccp" class="text-rose-600 font-bold">50,062</b></span>
+          </div>
+        </div>
+
+        <!-- 2. كاش -->
+        <div class="bg-gradient-to-br from-emerald-50/60 to-white p-2.5 sm:p-3 rounded-xl border border-emerald-200/70 space-y-1 min-w-0">
+          <div class="flex items-center justify-between text-slate-500 text-[11px]">
+            <span class="font-bold flex items-center gap-1 truncate"><i class="fa-solid fa-money-bill-wave text-emerald-600 shrink-0"></i> كاش</span>
+            <span class="text-[9px] bg-emerald-100 text-emerald-800 px-1 py-0.5 rounded font-bold shrink-0">دج</span>
+          </div>
+          <div id="accBalance-cash" class="text-sm sm:text-lg font-extrabold text-emerald-900 truncate">50,000 دج</div>
+          <div class="flex items-center justify-between text-[10px] text-slate-500 pt-0.5 border-t border-emerald-100/60 truncate">
+            <span>وارد: <b id="accIn-cash" class="text-emerald-600 font-bold">50,000</b></span>
+            <span>صرف: <b id="accOut-cash" class="text-rose-600 font-bold">0</b></span>
+          </div>
+        </div>
+
+        <!-- 3. حساب أورو -->
+        <div class="bg-gradient-to-br from-amber-50/60 to-white p-2.5 sm:p-3 rounded-xl border border-amber-200/70 space-y-1 min-w-0">
+          <div class="flex items-center justify-between text-slate-500 text-[11px]">
+            <span class="font-bold flex items-center gap-1 truncate"><i class="fa-solid fa-euro-sign text-amber-600 shrink-0"></i> حساب أورو</span>
+            <span class="text-[9px] bg-amber-100 text-amber-800 px-1 py-0.5 rounded font-bold shrink-0">EURO</span>
+          </div>
+          <div id="accBalance-euro" class="text-sm sm:text-lg font-extrabold text-amber-900 truncate">0.00 €</div>
+          <div class="flex items-center justify-between text-[10px] text-slate-500 pt-0.5 border-t border-amber-100/60 truncate">
+            <span>وارد: <b id="accIn-euro" class="text-emerald-600 font-bold">0.00 €</b></span>
+            <span>صرف: <b id="accOut-euro" class="text-rose-600 font-bold">0.00 €</b></span>
+          </div>
+        </div>
+
+        <!-- 4. حساب USDT -->
+        <div class="bg-gradient-to-br from-purple-50/60 to-white p-2.5 sm:p-3 rounded-xl border border-purple-200/70 space-y-1 min-w-0">
+          <div class="flex items-center justify-between text-slate-500 text-[11px]">
+            <span class="font-bold flex items-center gap-1 truncate"><i class="fa-solid fa-coins text-purple-600 shrink-0"></i> حساب USDT</span>
+            <span class="text-[9px] bg-purple-100 text-purple-800 px-1 py-0.5 rounded font-bold shrink-0">USDT</span>
+          </div>
+          <div id="accBalance-usdt" class="text-sm sm:text-lg font-extrabold text-purple-900 truncate">0.00 $</div>
+          <div class="flex items-center justify-between text-[10px] text-slate-500 pt-0.5 border-t border-purple-100/60 truncate">
+            <span>وارد: <b id="accIn-usdt" class="text-emerald-600 font-bold">0.00 $</b></span>
+            <span>صرف: <b id="accOut-usdt" class="text-rose-600 font-bold">0.00 $</b></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- البطاقات الإحصائية الأربع -->
+    <section class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4 w-full min-w-0">
+      <!-- 1. إجمالي الميزانية المخصصة (الراتب + المردودية) -->
+      <div class="bg-white rounded-2xl p-3 sm:p-4 shadow-sm border border-slate-200/70 min-w-0 overflow-hidden flex flex-col justify-between">
+        <div class="flex items-center justify-between text-slate-400 text-xs mb-1">
+          <span id="labelMonthFed" class="truncate text-[11px] sm:text-xs font-semibold">الميزانية الشهرية</span>
+          <span class="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+            <i class="fa-solid fa-coins text-xs"></i>
+          </span>
+        </div>
+        <div id="statMonthFed" class="text-base sm:text-2xl font-extrabold text-slate-800 truncate">121,650 دج</div>
+        <div id="statMonthFedSub" class="text-[10px] sm:text-[11px] text-emerald-600 font-semibold mt-1 break-words leading-tight">104,200 راتب + 17,450 مردودية</div>
+      </div>
+
+      <!-- 2. مصاريف الشهر المحدد -->
+      <div class="bg-white rounded-2xl p-3 sm:p-4 shadow-sm border border-slate-200/70 min-w-0 overflow-hidden flex flex-col justify-between">
+        <div class="flex items-center justify-between text-slate-400 text-xs mb-1">
+          <span id="labelMonthSpent" class="truncate text-[11px] sm:text-xs font-semibold">مصاريف الشهر</span>
+          <span class="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
+            <i class="fa-solid fa-cart-shopping text-xs"></i>
+          </span>
+        </div>
+        <div id="statMonthSpent" class="text-base sm:text-2xl font-extrabold text-rose-600 truncate">0 دج</div>
+        <div id="statMonthPaymentSplit" class="text-[10px] sm:text-[11px] text-slate-500 mt-1 break-words leading-tight">كاش: 0 | بريدي: 0</div>
+      </div>
+
+      <!-- 3. متبقي ميزانية الشهر -->
+      <div class="bg-white rounded-2xl p-3 sm:p-4 shadow-sm border border-slate-200/70 min-w-0 overflow-hidden flex flex-col justify-between">
+        <div class="flex items-center justify-between text-slate-400 text-xs mb-1">
+          <span class="truncate text-[11px] sm:text-xs font-semibold">المتبقي من الميزانية</span>
+          <span class="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+            <i class="fa-solid fa-scale-balanced text-xs"></i>
+          </span>
+        </div>
+        <div id="statMonthRemaining" class="text-base sm:text-2xl font-extrabold text-emerald-600 truncate">0 دج</div>
+        <div class="w-full bg-slate-100 h-2.5 sm:h-3 rounded-full mt-2 overflow-hidden shadow-inner">
+          <div id="statProgressBar" class="bg-emerald-500 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+        </div>
+      </div>
+
+      <!-- 4. صافي الرصيد الفعلي المتاح في كل الأظرفة (صف 11) -->
+      <div class="bg-white rounded-2xl p-3 sm:p-4 shadow-sm border border-slate-200/70 min-w-0 overflow-hidden flex flex-col justify-between">
+        <div class="flex items-center justify-between text-slate-400 text-xs mb-1">
+          <span class="truncate text-[11px] sm:text-xs font-semibold">صافي رصيد الأظرفة</span>
+          <span class="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
+            <i class="fa-solid fa-vault text-xs"></i>
+          </span>
+        </div>
+        <div id="statTotalNetAvailable" class="text-base sm:text-2xl font-extrabold text-purple-700 truncate">0 دج</div>
+        <div id="statPendingLoansNote" class="text-[10px] sm:text-[11px] text-slate-500 mt-1 break-words leading-tight">سلف معلقة: 0 دج</div>
+      </div>
+    </section>
+
+    <!-- ==================== القسم 1: لوحة المؤشرات والرسوم البيانية ==================== -->
+    <div id="view-dashboard" class="space-y-4 sm:space-y-6 w-full min-w-0">
+
+      <!-- فلتر نوع الأظرفة للرسوم البيانية -->
+      <div class="bg-white rounded-2xl p-3 sm:p-3.5 shadow-sm border border-slate-200/70 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 min-w-0 w-full overflow-hidden">
+        <div class="flex items-center gap-2 text-xs sm:text-sm font-bold text-slate-700 shrink-0">
+          <i class="fa-solid fa-filter text-emerald-600"></i>
+          <span>عرض الأظرفة في المخططات والأشرطة:</span>
+        </div>
+        <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1 w-full sm:w-auto shrink-0 whitespace-nowrap">
+          <button onclick="setEnvelopeGroupFilter('ALL')" id="grpBtn-ALL" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 text-white transition shadow-2xs shrink-0">
+            كل الأظرفة (23)
+          </button>
+          <button onclick="setEnvelopeGroupFilter('أساسيات')" id="grpBtn-أساسيات" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 transition shrink-0">
+            🟢 أساسيات (14)
+          </button>
+          <button onclick="setEnvelopeGroupFilter('كماليات')" id="grpBtn-كماليات" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 transition shrink-0">
+            🟠 كماليات (5)
+          </button>
+          <button onclick="setEnvelopeGroupFilter('إدخار')" id="grpBtn-إدخار" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 transition shrink-0">
+            🔵 إدخار (4)
+          </button>
+          <button onclick="setEnvelopeGroupFilter('الصرف الدوري')" id="grpBtn-الصرف الدوري" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 transition shrink-0">
+            الصرف الدوري (12)
+          </button>
+          <button onclick="setEnvelopeGroupFilter('الإدخار والتراكم')" id="grpBtn-الإدخار والتراكم" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 transition shrink-0">
+            الإدخار والتراكم (10)
+          </button>
+        </div>
+      </div>
+
+      <!-- الرسوم البيانية -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5 min-w-0 w-full">
+        <!-- الرسم 1: تغذية الشهر مقابل المصروف الفعلي لكل ظرف (يأخذ عمودين على الشاشات الكبيرة) -->
+        <div class="lg:col-span-2 bg-white rounded-2xl p-3.5 sm:p-5 shadow-sm border border-slate-200/70 min-w-0 w-full overflow-hidden">
+          <div class="flex items-center justify-between mb-3 min-w-0">
+            <h2 class="font-bold text-slate-800 text-xs sm:text-base flex items-center gap-2 truncate">
+              <i class="fa-solid fa-chart-column text-blue-500 shrink-0"></i>
+              <span id="barChartTitle" class="truncate">تغذية الشهر مقابل المصروف الفعلي لكل ظرف</span>
+            </h2>
+          </div>
+          <div class="h-64 sm:h-72 relative w-full overflow-hidden">
+            <canvas id="budgetVsActualChart"></canvas>
+          </div>
+        </div>
+
+        <!-- الرسم 2: توزيع المصاريف حسب الظرف -->
+        <div class="bg-white rounded-2xl p-3.5 sm:p-5 shadow-sm border border-slate-200/70 min-w-0 w-full overflow-hidden">
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-3 min-w-0">
+            <h2 class="font-bold text-slate-800 text-xs sm:text-base flex items-center gap-2 truncate">
+              <i class="fa-solid fa-chart-pie text-emerald-500 shrink-0"></i>
+              <span id="pieChartTitle" class="truncate">توزيع المصاريف حسب الظرف</span>
+            </h2>
+            <div class="flex flex-wrap items-center gap-1.5 shrink-0">
+              <!-- فلترة التصنيف -->
+              <select
+                id="pieChartFilter"
+                onchange="onPieChartFilterChange(this.value)"
+                class="text-xs bg-slate-50 border border-slate-200 text-slate-700 font-bold rounded-lg px-2 py-1 focus:outline-none focus:border-emerald-500 cursor-pointer shadow-2xs"
+                title="فلترة الأظرفة"
+              >
+                <option value="ALL">كل الأظرفة</option>
+                <option value="CAT_ESSENTIALS">أساسيات</option>
+                <option value="CAT_LUXURIES">كماليات</option>
+                <option value="CAT_SAVINGS">ادخار</option>
+                <option value="GRP_SPENDING">أظرفة الصرف</option>
+                <option value="GRP_SAVINGS">أظرفة الادخار</option>
+              </select>
+
+              <!-- نوع القيمة المعروضة -->
+              <select
+                id="pieChartMetric"
+                onchange="onPieChartMetricChange(this.value)"
+                class="text-xs bg-emerald-50 border border-emerald-200 text-emerald-800 font-bold rounded-lg px-1.5 py-1 focus:outline-none focus:border-emerald-500 cursor-pointer shadow-2xs"
+                title="نوع البيانات المعروضة في المخطط"
+              >
+                <option value="SPENT">المصاريف</option>
+                <option value="ALLOCATED">الميزانية</option>
+                <option value="NET_BALANCE">صافي الرصيد</option>
+              </select>
+            </div>
+          </div>
+          <div class="h-64 sm:h-72 relative w-full overflow-hidden flex items-center justify-center">
+            <canvas id="categoryPieChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- الرسم 3: الخط الزمني للمصاريف اليومية + طريقة الدفع -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5 min-w-0 w-full">
+        <div class="lg:col-span-2 bg-white rounded-2xl p-3.5 sm:p-5 shadow-sm border border-slate-200/70 min-w-0 w-full overflow-hidden">
+          <div class="flex items-center justify-between mb-3 min-w-0">
+            <h2 class="font-bold text-slate-800 text-xs sm:text-base flex items-center gap-2 truncate">
+              <i class="fa-solid fa-chart-line text-purple-500 shrink-0"></i>
+              <span>الخط الزمني للمصاريف اليومية</span>
+            </h2>
+          </div>
+          <div class="h-52 sm:h-56 relative w-full overflow-hidden">
+            <canvas id="timelineChart"></canvas>
+          </div>
+        </div>
+
+        <!-- الرسم 4: كاش مقابل بريدي موب -->
+        <div class="bg-white rounded-2xl p-3.5 sm:p-5 shadow-sm border border-slate-200/70 min-w-0 w-full overflow-hidden">
+          <div class="flex items-center justify-between mb-3 min-w-0">
+            <h2 class="font-bold text-slate-800 text-xs sm:text-base flex items-center gap-2 truncate">
+              <i class="fa-solid fa-credit-card text-amber-500 shrink-0"></i>
+              <span>المصاريف حسب طريقة الدفع</span>
+            </h2>
+          </div>
+          <div class="h-52 sm:h-56 relative w-full overflow-hidden flex items-center justify-center">
+            <canvas id="paymentMethodChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- بطاقات حالة الأظرفة الـ 23 مقسمة حسب التصنيفات الكبيرة (أساسيات / كماليات / إدخار) -->
+      <div class="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-200/70 space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3.5">
+          <div>
+            <h2 class="font-bold text-slate-800 text-sm sm:text-base flex items-center gap-2">
+              <i class="fa-solid fa-layer-group text-emerald-600"></i>
+              حالة الأظرفة المالية حسب التصنيف (أساسيات / كماليات / إدخار)
+            </h2>
+            <p class="text-xs text-slate-400 mt-0.5">اضغط على أي ظرف لتسجيل مصروف مباشر منه</p>
+          </div>
+          <button onclick="switchTab('feeding')" class="text-xs text-blue-600 hover:underline font-bold">
+            الانتقال لجدول تغذية الأظرفة <i class="fa-solid fa-arrow-left mr-1"></i>
+          </button>
+        </div>
+
+        <div id="dashboardEnvelopesGrid" class="space-y-5"></div>
+      </div>
+    </div>
+
+    <!-- ==================== القسم 2: المصاريف اليومية ==================== -->
+    <div id="view-expenses" class="hidden space-y-4">
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200/70 flex flex-wrap items-center justify-between gap-3">
+        <div class="flex flex-wrap items-center gap-2 flex-1">
+          <!-- بحث نصي -->
+          <div class="relative flex-1 min-w-[180px]">
+            <i class="fa-solid fa-magnifying-glass text-slate-400 absolute right-3 top-3 text-sm"></i>
+            <input
+              type="text"
+              id="searchExpenseInput"
+              oninput="renderExpensesList()"
+              placeholder="ابحث في البيان أو الملاحظات أو الظرف..."
+              class="w-full bg-slate-50 border border-slate-200 rounded-xl pr-9 pl-3 py-2 text-sm focus:outline-none focus:border-emerald-500"
+            />
+          </div>
+
+          <!-- فلتر الظرف -->
+          <select
+            id="filterEnvelopeSelect"
+            onchange="renderExpensesList()"
+            class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-emerald-500"
+          >
+            <option value="ALL">كل الأظرفة</option>
+          </select>
+
+          <!-- فلتر طريقة الدفع -->
+          <select
+            id="filterPaymentSelect"
+            onchange="renderExpensesList()"
+            class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-emerald-500"
+          >
+            <option value="ALL">كل طرق الدفع</option>
+            <option value="كاش">كاش</option>
+            <option value="بريدي موب">بريدي موب</option>
+          </select>
+        </div>
+
+        <button
+          onclick="openExpenseModal()"
+          class="bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold px-4 py-2 rounded-xl flex items-center gap-2 shadow-sm transition"
+        >
+          <i class="fa-solid fa-plus"></i> تسجيل مصروف يومي
+        </button>
+      </div>
+
+      <!-- قائمة المصاريف اليومية -->
+      <div id="expensesListContainer" class="space-y-2.5"></div>
+    </div>
+
+    <!-- ==================== القسم 3: استلاف الأظرفة ==================== -->
+    <div id="view-loans" class="hidden space-y-4">
+      <div class="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-200/70 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 class="font-bold text-slate-800 text-base flex items-center gap-2">
+            <i class="fa-solid fa-right-left text-amber-500"></i>
+            سجل استلاف الأظرفة والتحويل للادخار
+          </h2>
+          <p class="text-xs text-slate-500 mt-0.5">
+            يسجل السلف المؤقتة والتحويلات بين الأظرفة مع الحفاظ التام على معادلات العمودين <code>H (الحالة)</code> و<code>J (المتبقي)</code> في الشيت
+          </p>
+        </div>
+        <button
+          onclick="openLoanModal()"
+          class="bg-amber-600 hover:bg-amber-500 text-white text-sm font-bold px-4 py-2 rounded-xl flex items-center gap-2 shadow-sm transition"
+        >
+          <i class="fa-solid fa-plus"></i> تسجيل سلفة / تحويل جديد
+        </button>
+      </div>
+
+      <div id="loansListContainer" class="space-y-3"></div>
+    </div>
+
+    <!-- ==================== القسم 4: تغذية الأظرفة والخطة المرجعية ==================== -->
+    <div id="view-feeding" class="hidden space-y-6">
+
+      <!-- ملخص الأظرفة الموحدة (الخطة المرجعية الرسمية) -->
+      <div class="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-200/70 space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
+          <div>
+            <h2 class="font-bold text-slate-800 text-base flex items-center gap-2">
+              <i class="fa-solid fa-compass text-emerald-600"></i>
+              الخطة المرجعية للميزانية وتوزيع الأظرفة (الأظرفة الموحدة - قراءة فقط)
+            </h2>
+            <p class="text-xs text-slate-400">هذه الأرقام تُقرأ مباشرة من شيت «الأظرفة الموحدة» وتُعتمد كمرجع رسمي لتغذية الأظرفة الشهرية والفصلية</p>
+          </div>
+          <span class="bg-slate-100 text-slate-600 text-xs font-bold px-3 py-1 rounded-lg">
+            <i class="fa-solid fa-lock ml-1"></i>محمية من التعديل
+          </span>
+        </div>
+
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 text-center">
+          <div class="bg-slate-50 rounded-xl p-3 border border-slate-100">
+            <div class="text-[11px] text-slate-400">الراتب الشهري الثابت</div>
+            <div id="ovMonthlySalary" class="text-base font-extrabold text-slate-800 mt-1">104,200 دج</div>
+          </div>
+          <div class="bg-slate-50 rounded-xl p-3 border border-slate-100">
+            <div class="text-[11px] text-slate-400">المردودية الفصلية (شهرياً)</div>
+            <div id="ovBonusMonthly" class="text-base font-extrabold text-slate-800 mt-1">17,450 دج</div>
+          </div>
+          <div class="bg-emerald-50 rounded-xl p-3 border border-emerald-100">
+            <div class="text-[11px] text-emerald-700">المعدل الشهري الموزون</div>
+            <div id="ovWeightedAvg" class="text-base font-extrabold text-emerald-700 mt-1">121,650 دج</div>
+          </div>
+          <div class="bg-blue-50 rounded-xl p-3 border border-blue-100">
+            <div class="text-[11px] text-blue-700">ملخص نوع الحساب (السيولة)</div>
+            <div id="ovCashSplit" class="text-xs font-extrabold text-blue-800 mt-1">كاش: 69,150 | جاري: 52,500</div>
+          </div>
+        </div>
+
+        <!-- التصنيفات الأربعة المعتمدة من الأظرفة الموحدة: أساسيات، كماليات، استثمار وادخار، احتياطي وتدوير -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-2">
+          <div class="bg-emerald-50/70 rounded-xl p-3.5 border border-emerald-200 flex items-center justify-between">
+            <div>
+              <div class="text-xs font-extrabold text-emerald-800 flex items-center gap-1.5">
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-600"></span>
+                أساسيات (14 ظرفاً)
+              </div>
+              <div id="ovEssentialsPct" class="text-[11px] text-emerald-700 mt-0.5">59.31% من الدخل الموزون</div>
+            </div>
+            <div id="ovEssentialsTotal" class="text-base sm:text-lg font-extrabold text-emerald-800">72,150 دج</div>
+          </div>
+
+          <div class="bg-amber-50/70 rounded-xl p-3.5 border border-amber-200 flex items-center justify-between">
+            <div>
+              <div class="text-xs font-extrabold text-amber-900 flex items-center gap-1.5">
+                <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                كماليات (5 أظرفة)
+              </div>
+              <div id="ovLuxuriesPct" class="text-[11px] text-amber-700 mt-0.5">20.55% من الدخل الموزون</div>
+            </div>
+            <div id="ovLuxuriesTotal" class="text-base sm:text-lg font-extrabold text-amber-900">25,000 دج</div>
+          </div>
+
+          <div class="bg-indigo-50/70 rounded-xl p-3.5 border border-indigo-200 flex items-center justify-between">
+            <div>
+              <div class="text-xs font-extrabold text-indigo-900 flex items-center gap-1.5">
+                <span class="w-2.5 h-2.5 rounded-full bg-indigo-600"></span>
+                استثمار وادخار (3 أظرفة)
+              </div>
+              <div id="ovSavingsPct" class="text-[11px] text-indigo-700 mt-0.5">20.14% من الدخل الموزون</div>
+            </div>
+            <div id="ovSavingsTotal" class="text-base sm:text-lg font-extrabold text-indigo-900">24,500 دج</div>
+          </div>
+
+          <div class="bg-purple-50/70 rounded-xl p-3.5 border border-purple-200 flex items-center justify-between">
+            <div>
+              <div class="text-xs font-extrabold text-purple-900 flex items-center gap-1.5">
+                <span class="w-2.5 h-2.5 rounded-full bg-purple-600"></span>
+                احتياطي وتدوير (ظرف 1)
+              </div>
+              <div id="ovContingencyPct" class="text-[11px] text-purple-700 mt-0.5">0.00% من الدخل الموزون</div>
+            </div>
+            <div id="ovContingencyTotal" class="text-base sm:text-lg font-extrabold text-purple-900">0 دج</div>
+          </div>
+        </div>
+
+        <!-- جدول تفصيل الرصيد الإجمالي المخصص لكل ظرف من الأظرفة الموحدة -->
+        <div class="pt-3 border-t border-slate-100">
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+            <button
+              type="button"
+              onclick="document.getElementById('sheet1EnvelopesTableWrap').classList.toggle('hidden')"
+              class="flex items-center gap-2 text-xs sm:text-sm font-bold text-slate-700 hover:text-emerald-600 py-1 transition"
+            >
+              <i class="fa-solid fa-table-list text-emerald-600"></i>
+              <span>جدول تفصيل المخصص المرجعي للأظرفة الموحدة الـ 23</span>
+              <i class="fa-solid fa-chevron-down text-xs"></i>
+            </button>
+
+            <div class="flex flex-wrap gap-1.5">
+              <button type="button" onclick="setFeedingRefCategoryFilter('ALL')" id="feedRefCat-ALL" class="px-3 py-1 rounded-lg text-xs font-bold bg-slate-800 text-white transition">الكل (23)</button>
+              <button type="button" onclick="setFeedingRefCategoryFilter('أساسيات')" id="feedRefCat-أساسيات" class="px-3 py-1 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-800 hover:bg-emerald-100 transition">أساسيات (14)</button>
+              <button type="button" onclick="setFeedingRefCategoryFilter('كماليات')" id="feedRefCat-كماليات" class="px-3 py-1 rounded-lg text-xs font-bold bg-amber-50 text-amber-800 hover:bg-amber-100 transition">كماليات (5)</button>
+              <button type="button" onclick="setFeedingRefCategoryFilter('استثمار وادخار')" id="feedRefCat-استثمار وادخار" class="px-3 py-1 rounded-lg text-xs font-bold bg-indigo-50 text-indigo-800 hover:bg-indigo-100 transition">استثمار وادخار (3)</button>
+              <button type="button" onclick="setFeedingRefCategoryFilter('احتياطي وتدوير')" id="feedRefCat-احتياطي وتدوير" class="px-3 py-1 rounded-lg text-xs font-bold bg-purple-50 text-purple-800 hover:bg-purple-100 transition">احتياطي وتدوير (1)</button>
+            </div>
+          </div>
+
+          <div id="sheet1EnvelopesTableWrap" class="mt-2 overflow-x-auto">
+            <table class="w-full text-xs text-right border-collapse">
+              <thead>
+                <tr class="bg-slate-100 text-slate-700 border-b border-slate-200">
+                  <th class="p-2.5 rounded-tr-xl">الظرف</th>
+                  <th class="p-2.5">التصنيف</th>
+                  <th class="p-2.5">نوع الظرف</th>
+                  <th class="p-2.5">نوع الحساب</th>
+                  <th class="p-2.5">مخصص الراتب (شهرياً)</th>
+                  <th class="p-2.5">حصة المردودية (شهرياً)</th>
+                  <th class="p-2.5 bg-emerald-50 text-emerald-800">المعدل الشهري الموزون</th>
+                  <th class="p-2.5 bg-purple-50 text-purple-800">المردودية الفصلية (×3)</th>
+                  <th class="p-2.5 rounded-tl-xl">دورة التجميع</th>
+                </tr>
+              </thead>
+              <tbody id="sheet1ReferenceTableBody" class="divide-y divide-slate-100"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- مربع تصفية أظرفة الصرف الدوري لنهاية الشهر وتحويل الفائض للإدخار -->
+      <div class="bg-gradient-to-l from-indigo-950 via-slate-900 to-indigo-900 text-white rounded-2xl p-4 sm:p-5 shadow-sm space-y-3 border border-indigo-800/40 relative overflow-hidden">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="space-y-1">
+            <div class="flex items-center gap-2">
+              <span class="w-8 h-8 rounded-xl bg-indigo-500/25 border border-indigo-400/30 flex items-center justify-center text-indigo-300">
+                <i class="fa-solid fa-piggy-bank text-base"></i>
+              </span>
+              <h2 class="font-extrabold text-base sm:text-lg text-white">تصفية أظرفة الصرف الدوري لنهاية الشهر</h2>
+              <span class="bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-[11px] font-bold px-2 py-0.5 rounded-full">
+                تحويل الفائض للإدخار 🎯
+              </span>
+            </div>
+            <p class="text-xs text-slate-300 max-w-2xl leading-relaxed">
+              سحب ما تبقى من فوائض ومبالغ غير مستهلكة في أظرفة <b>"الصرف الدوري"</b> في نهاية الشهر وتحويلها تلقائياً إلى <b>ظرف الإدخار</b>، وتسجيل كافة العمليات في صفحة <b>"استلاف الأظرفة"</b>.
+            </p>
+          </div>
+
+          <div class="flex items-center gap-3">
+            <div class="text-left hidden sm:block bg-white/5 border border-white/10 px-3.5 py-1.5 rounded-xl">
+              <div class="text-[10px] text-slate-400">إجمالي الفائض المتاح للتصفية</div>
+              <div id="sweepAvailableSummary" class="text-base font-black text-emerald-400">0 دج</div>
+            </div>
+            <button
+              onclick="openSweepModal()"
+              class="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 active:scale-95 text-white font-extrabold text-xs sm:text-sm px-5 py-2.5 sm:py-3 rounded-xl flex items-center gap-2 shadow-lg shadow-emerald-950/40 transition shrink-0"
+            >
+              <i class="fa-solid fa-broom"></i>
+              <span>تصفية الأظرفة الآن</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- جدول الدورات الشهرية ومنح المردودية (الصفوف 12 إلى 27 في تغذية الأظرفة) -->
+      <div class="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-200/70 space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 class="font-bold text-slate-800 text-base flex items-center gap-2">
+              <i class="fa-solid fa-calendar-check text-blue-600"></i>
+              تغذية الأظرفة وسجل الدورات
+            </h2>
+            <p class="text-xs text-slate-500 mt-0.5">
+              اضغط على زر <b>"تغذية الأظرفة"</b> لتحديد الشهر والسنة ونوع المدخول وتوزيع المبالغ على الأظرفة الـ 23
+            </p>
+          </div>
+          <button
+            onclick="openFeedingModal()"
+            class="bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold px-5 py-2.5 rounded-xl flex items-center gap-2 shadow-sm transition shrink-0"
+          >
+            <i class="fa-solid fa-coins"></i>
+            تغذية الأظرفة
+          </button>
+        </div>
+
+        <div id="feedingCyclesContainer" class="grid grid-cols-1 md:grid-cols-2 gap-3.5"></div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- الأزرار العائمة (تصفية الأظرفة / الاستلاف + زر الإضافة السريع) -->
+  <div id="floatingActionsContainer" class="fixed left-4 bottom-20 md:bottom-8 z-30 flex flex-col gap-2.5 items-center">
+    <!-- 1. أيقونة تصفية الأظرفة (في الرئيسية والمصاريف) - أيقونة فقط بدون كلام -->
+    <button
+      id="floatingFilterBtn"
+      onclick="cycleEnvelopeCategoryFilter()"
+      class="bg-slate-800 hover:bg-slate-700 active:scale-90 text-white rounded-full w-12 h-12 flex items-center justify-center shadow-lg transition border border-white/20"
+      title="تصفية الأظرفة (أساسيات / إدخار / كماليات / الجميع)"
+    >
+      <i id="floatingFilterIcon" class="fa-solid fa-layer-group text-lg text-emerald-400"></i>
+    </button>
+
+    <!-- 2. أيقونة تصفية التحويلات (في صفحة الاستلاف فقط) - سلفة مؤقتة / تحويل للادخار / الجميع -->
+    <button
+      id="floatingLoanFilterBtn"
+      onclick="cycleLoanTypeFilter()"
+      class="hidden bg-slate-800 hover:bg-slate-700 active:scale-90 text-white rounded-full w-12 h-12 flex items-center justify-center shadow-lg transition border border-white/20"
+      title="تصفية التحويلات: استلاف مؤقت / تصفية دائمة / الجميع"
+    >
+      <i id="floatingLoanFilterIcon" class="fa-solid fa-arrows-rotate text-lg text-blue-400"></i>
+    </button>
+
+    <!-- 3. زر الإضافة العائم (+) -->
+    <button
+      id="floatingAddBtn"
+      onclick="handleFloatingAddClick()"
+      class="bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white rounded-full w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center shadow-xl shadow-emerald-600/30 transition"
+      title="إضافة سريعة"
+    >
+      <i class="fa-solid fa-plus text-xl sm:text-2xl"></i>
+    </button>
+  </div>
+
+  <!-- شريط التنقل السفلي للهواتف (Android Bottom Bar) -->
+  <nav class="md:hidden fixed bottom-0 left-0 right-0 w-full bg-white/95 backdrop-blur-md border-t border-slate-200 z-30 flex items-center justify-around py-1.5 shadow-lg safe-area-pb">
+    <button onclick="switchTab('dashboard')" id="mobTab-dashboard" class="flex-1 py-1 flex flex-col items-center justify-center gap-0.5 text-[10px] font-bold text-slate-500 mobile-nav-active">
+      <i class="fa-solid fa-chart-pie text-base"></i>
+      <span>الرئيسية</span>
+    </button>
+    <button onclick="switchTab('expenses')" id="mobTab-expenses" class="flex-1 py-1 flex flex-col items-center justify-center gap-0.5 text-[10px] font-bold text-slate-500">
+      <i class="fa-solid fa-receipt text-base"></i>
+      <span>المصاريف</span>
+    </button>
+    <button onclick="switchTab('loans')" id="mobTab-loans" class="flex-1 py-1 flex flex-col items-center justify-center gap-0.5 text-[10px] font-bold text-slate-500">
+      <i class="fa-solid fa-right-left text-base"></i>
+      <span>الاستلاف</span>
+    </button>
+    <button onclick="switchTab('feeding')" id="mobTab-feeding" class="flex-1 py-1 flex flex-col items-center justify-center gap-0.5 text-[10px] font-bold text-slate-500">
+      <i class="fa-solid fa-sack-dollar text-base"></i>
+      <span>التغذية</span>
+    </button>
+  </nav>
+
+  <!-- ==================== 1. نافذة إضافة / تعديل مصروف يومي ==================== -->
+  <div id="expenseModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-5 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <h3 id="expenseModalTitle" class="font-bold text-lg text-slate-800">تسجيل مصروف يومي</h3>
+        <button onclick="closeExpenseModal()" class="text-slate-400 hover:text-slate-600 text-lg">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <form id="expenseForm" onsubmit="handleSaveExpense(event)" class="space-y-3.5">
+        <input type="hidden" id="expRowIndex" />
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">المبلغ (دج) *</label>
+            <input
+              type="number"
+              step="1"
+              min="1"
+              id="expAmount"
+              required
+              oninput="validateExpenseModalLive()"
+              placeholder="2500"
+              class="w-full border border-slate-300 rounded-xl px-3.5 py-2 text-lg font-extrabold text-slate-800 focus:outline-none focus:border-emerald-500"
+            />
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">طريقة الدفع / الحساب *</label>
+            <select
+              id="expPaymentMethod"
+              required
+              class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-sm font-semibold focus:outline-none focus:border-emerald-500"
+            >
+              <option value="كاش">💵 كاش (نقدي)</option>
+              <option value="بريدي موب">🏦 حساب CCP / بريدي موب</option>
+              <option value="حساب أورو">💶 حساب أورو (€)</option>
+              <option value="حساب USDT">🌐 حساب USDT ($)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">الظرف *</label>
+            <select
+              id="expEnvelope"
+              required
+              onchange="onExpenseEnvelopeChange(this.value); validateExpenseModalLive();"
+              class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-sm font-semibold focus:outline-none focus:border-emerald-500"
+            ></select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">التاريخ *</label>
+            <input
+              type="date"
+              id="expDate"
+              required
+              class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-emerald-500"
+            />
+          </div>
+        </div>
+
+        <!-- مؤشر الرصيد المتاح في الظرف عند تسجيل مصروف -->
+        <div id="expenseBalanceHintBox" class="rounded-xl p-3 text-xs border bg-slate-50 border-slate-200 text-slate-700 flex items-center justify-between">
+          <span id="expenseBalanceHintText">الرصيد المتاح في الظرف: —</span>
+          <span id="expenseBalanceMaxBadge" class="font-extrabold"></span>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-600 mb-1">البيان (وصف العملية) *</label>
+          <input
+            type="text"
+            id="expStatement"
+            required
+            placeholder="مثال: شراء خضار وفواكه أسبوعية"
+            class="w-full border border-slate-300 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-emerald-500"
+          />
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-600 mb-1">ملاحظات إضافية</label>
+          <input
+            type="text"
+            id="expNote"
+            placeholder="مثال: مشتريات السوق"
+            class="w-full border border-slate-300 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-emerald-500"
+          />
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+          <button type="button" onclick="closeExpenseModal()" class="px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100">
+            إلغاء
+          </button>
+          <button type="submit" class="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2 rounded-xl text-sm font-bold shadow">
+            حفظ في المصاريف اليومية
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== 2. نافذة إضافة / تعديل استلاف الأظرفة ==================== -->
+  <div id="loanModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-5 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <h3 id="loanModalTitle" class="font-bold text-lg text-slate-800">تسجيل سلفة أو تحويل بين الأظرفة</h3>
+        <button onclick="closeLoanModal()" class="text-slate-400 hover:text-slate-600 text-lg">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <form onsubmit="handleSaveLoan(event)" class="space-y-3.5">
+        <input type="hidden" id="loanRowIndex" />
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">نوع العملية *</label>
+            <select
+              id="loanType"
+              required
+              onchange="validateLoanModalLive()"
+              class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-sm font-semibold focus:outline-none focus:border-amber-500"
+            >
+              <option value="سلفة مؤقتة">🔄 سلفة مؤقتة (تُسترد لاحقاً)</option>
+              <option value="تحويل للادخار">📥 تحويل للادخار (دائم)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">المبلغ (دج) *</label>
+            <input
+              type="number"
+              step="1"
+              min="1"
+              id="loanAmount"
+              required
+              oninput="validateLoanModalLive()"
+              placeholder="1000"
+              class="w-full border border-slate-300 rounded-xl px-3.5 py-2 text-lg font-extrabold text-slate-800 focus:outline-none focus:border-amber-500"
+            />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">من الظرف (المقرض / المسحوب منه المال) 📤 *</label>
+            <select
+              id="loanFromEnvelope"
+              required
+              onchange="validateLoanModalLive()"
+              class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-sm font-semibold focus:outline-none focus:border-amber-500"
+            ></select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">إلى الظرف (المستفيد / الذي يدخل إليه المال) 📥 *</label>
+            <select
+              id="loanToEnvelope"
+              required
+              onchange="validateLoanModalLive()"
+              class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-sm font-semibold focus:outline-none focus:border-amber-500"
+            ></select>
+          </div>
+        </div>
+
+        <!-- مؤشر الرصيد المتاح والتحقق من عدم تجاوز رصيد الظرف المقرض -->
+        <div id="loanBalanceHintBox" class="rounded-xl p-3 text-xs border bg-slate-50 border-slate-200 text-slate-700 flex items-center justify-between">
+          <span id="loanBalanceHintText">الرصيد المتاح في الظرف المقرض: —</span>
+          <span id="loanBalanceMaxBadge" class="font-extrabold"></span>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">تاريخ العملية *</label>
+            <input
+              type="date"
+              id="loanDate"
+              required
+              class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-amber-500"
+            />
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">تاريخ الاستحقاق</label>
+            <input
+              type="date"
+              id="loanDueDate"
+              class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-amber-500"
+            />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">السبب *</label>
+            <input
+              type="text"
+              id="loanReason"
+              required
+              placeholder="مثال: وقود طارئ"
+              class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-amber-500"
+            />
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">المبلغ المرجع حتى الآن (دج)</label>
+            <input
+              type="number"
+              step="1"
+              id="loanRepaidAmount"
+              value="0"
+              class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm font-bold focus:outline-none focus:border-amber-500"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-600 mb-1">ملاحظات</label>
+          <input
+            type="text"
+            id="loanNote"
+            placeholder="أي تفاصيل إضافية..."
+            class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-amber-500"
+          />
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+          <button type="button" onclick="closeLoanModal()" class="px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100">
+            إلغاء
+          </button>
+          <button type="submit" id="btnSaveLoan" class="bg-amber-600 hover:bg-amber-500 text-white px-5 py-2 rounded-xl text-sm font-bold shadow transition">
+            حفظ العملية
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== 3. نافذة تغذية الأظرفة ==================== -->
+  <div id="feedingModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 hidden flex items-center justify-center p-3 sm:p-4">
+    <div class="bg-white rounded-2xl max-w-3xl w-full p-5 shadow-2xl space-y-4 max-h-[92vh] flex flex-col">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3 shrink-0">
+        <div>
+          <h3 id="feedingModalTitle" class="font-bold text-lg text-slate-800">نموذج تغذية الأظرفة</h3>
+          <p id="feedingModalSubtitle" class="text-xs text-slate-500">حدد الشهر والسنة ونوع المدخول لتوزيع المبالغ على الأظرفة الـ 23</p>
+        </div>
+        <button onclick="closeFeedingModal()" class="text-slate-400 hover:text-slate-600 text-lg">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- 1. تحديد الشهر، 2. السنة، 3. نوع المدخول -->
+      <div class="bg-slate-50 rounded-2xl p-3.5 border border-slate-200/80 space-y-3 shrink-0">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">1. الشهر *</label>
+            <select
+              id="feedMonthSelect"
+              onchange="onFeedingHeaderChange()"
+              class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm font-bold text-slate-800 bg-white focus:outline-none focus:border-blue-500"
+            >
+              <option value="جانفي">جانفي</option>
+              <option value="فيفري">فيفري</option>
+              <option value="مارس">مارس</option>
+              <option value="أفريل">أفريل</option>
+              <option value="ماي">ماي</option>
+              <option value="جوان">جوان</option>
+              <option value="جويلية">جويلية</option>
+              <option value="أوت">أوت</option>
+              <option value="سبتمبر">سبتمبر</option>
+              <option value="أكتوبر">أكتوبر</option>
+              <option value="نوفمبر" selected>نوفمبر</option>
+              <option value="ديسمبر">ديسمبر</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">2. السنة *</label>
+            <select
+              id="feedYearSelect"
+              onchange="onFeedingHeaderChange()"
+              class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm font-bold text-slate-800 bg-white focus:outline-none focus:border-blue-500"
+            >
+              <option value="2026" selected>2026</option>
+              <option value="2027">2027</option>
+              <option value="2028">2028</option>
+              <option value="2029">2029</option>
+              <option value="2030">2030</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">3. نوع المدخول *</label>
+            <select
+              id="feedIncomeCategory"
+              onchange="onFeedingHeaderChange()"
+              class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm font-bold text-slate-800 bg-white focus:outline-none focus:border-blue-500"
+            >
+              <option value="راتب">💼 راتب</option>
+              <option value="مردودية">🎁 مردودية</option>
+              <option value="مدخول آخر">➕ مدخول آخر (أذكر إسمه)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- حقل كتابة اسم المدخول الآخر (يظهر فقط عند اختيار "مدخول آخر") -->
+        <div id="feedCustomIncomeWrap" class="hidden pt-1">
+          <label class="block text-xs font-bold text-amber-800 mb-1">اسم المدخول الآخر *</label>
+          <input
+            type="text"
+            id="feedCustomIncomeName"
+            oninput="onCustomIncomeNameInput()"
+            placeholder="اكتب اسم المدخول هنا (مثال: منحة إضافية، عمل حر، مكافأة...)"
+            class="w-full border border-amber-300 rounded-xl px-3.5 py-2 text-sm font-bold text-slate-800 bg-white focus:outline-none focus:border-amber-500"
+          />
+        </div>
+
+        <!-- شريط المبلغ المستلم والمعادلة التلقائية للموزع والمتبقي -->
+        <div class="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-200/80">
+          <div class="flex items-center gap-3 flex-1 min-w-[200px]">
+            <label class="text-xs font-bold text-slate-700 shrink-0">إجمالي المبلغ المستلم (دج):</label>
+            <input
+              type="number"
+              id="feedReceivedInput"
+              oninput="recalcFeedingModalLive()"
+              placeholder="104000"
+              class="w-40 border border-slate-300 rounded-xl px-3 py-1.5 text-base font-extrabold text-slate-800 bg-white focus:outline-none focus:border-blue-500"
+            />
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              id="btnAutoFillFeeding"
+              onclick="fillFeedingFromReference()"
+              class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-3.5 py-2 rounded-xl flex items-center gap-1.5 shadow-xs transition"
+            >
+              <i class="fa-solid fa-wand-magic-sparkles"></i>
+              <span id="btnAutoFillFeedingText">تعبئة تلقائية بالمبلغ المرصود</span>
+            </button>
+            <button
+              type="button"
+              onclick="clearFeedingModalInputs()"
+              class="bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold px-3 py-2 rounded-xl transition"
+            >
+              تصفير الحقول
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-2 text-center text-xs pt-2 border-t border-slate-200">
+          <div>
+            <span class="text-slate-400 block">إجمالي الموزع (العمود E)</span>
+            <span id="feedLiveDistributed" class="font-extrabold text-slate-800 text-sm">0 دج</span>
+          </div>
+          <div>
+            <span class="text-slate-400 block">الرصيد المتبقي (العمود F)</span>
+            <span id="feedLiveRemaining" class="font-extrabold text-emerald-600 text-sm">0 دج</span>
+          </div>
+          <div>
+            <span class="text-slate-400 block">حالة التوزيع (العمود G)</span>
+            <span id="feedLiveStatus" class="font-extrabold text-slate-700 text-xs">⚪ غير مسجل</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- حقول الأظرفة الـ 23 -->
+      <div id="feedingModalEnvelopesList" class="overflow-y-auto flex-1 pr-1 space-y-4"></div>
+
+      <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 shrink-0">
+        <button type="button" onclick="closeFeedingModal()" class="px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100">
+          إلغاء
+        </button>
+        <button
+          type="button"
+          onclick="handleSaveFeedingCycle()"
+          class="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-2 rounded-xl text-sm font-bold shadow"
+        >
+          حفظ التوزيع في الشيت
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== نافذة تصفية أظرفة الصرف الدوري وتحويلها إلى الإدخار ==================== -->
+  <div id="sweepModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 hidden flex items-center justify-center p-3 sm:p-4">
+    <div class="bg-white rounded-2xl max-w-2xl w-full p-4 sm:p-5 shadow-2xl space-y-4 max-h-[92vh] flex flex-col">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3 shrink-0">
+        <div>
+          <h3 class="font-bold text-lg text-slate-800 flex items-center gap-2">
+            <i class="fa-solid fa-broom text-emerald-600"></i>
+            تصفية أظرفة الصرف الدوري لنهاية الشهر
+          </h3>
+          <p class="text-xs text-slate-500 mt-0.5">
+            حدد المبالغ المراد سحبها من كل ظرف (القيمة الافتراضية هي الرصيد المتبقي بالكامل) لتحويلها دفعة واحدة إلى ظرف الإدخار
+          </p>
+        </div>
+        <button onclick="closeSweepModal()" class="text-slate-400 hover:text-slate-600 text-lg p-1">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- إعدادات التصفية العامة -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 p-3 bg-slate-50 rounded-xl border border-slate-200/70 text-xs shrink-0">
+        <div>
+          <label class="block text-slate-500 font-bold mb-1">تاريخ التحويل</label>
+          <input
+            type="date"
+            id="sweepDateInput"
+            class="w-full bg-white border border-slate-200 rounded-lg p-2 font-bold text-slate-700 text-xs focus:outline-none focus:border-emerald-500"
+          >
+        </div>
+        <div>
+          <label class="block text-slate-500 font-bold mb-1">الوجهة المستلمة</label>
+          <div class="bg-indigo-50 border border-indigo-200 text-indigo-900 rounded-lg p-2 font-black text-xs flex items-center gap-1.5">
+            <span>🏦</span>
+            <span>ظرف الإدخار (إدخار)</span>
+          </div>
+        </div>
+        <div>
+          <label class="block text-slate-500 font-bold mb-1">بيان العملية</label>
+          <input
+            type="text"
+            id="sweepReasonInput"
+            value="تصفية وفائض نهاية الشهر إلى الادخار"
+            placeholder="بيان العملية..."
+            class="w-full bg-white border border-slate-200 rounded-lg p-2 font-bold text-slate-700 text-xs focus:outline-none focus:border-emerald-500"
+          >
+        </div>
+      </div>
+
+      <!-- قائمة أظرفة الصرف الدوري ومبالغ التصفية -->
+      <div class="overflow-y-auto flex-1 pr-1 space-y-2.5" id="sweepEnvelopesListContainer">
+        <!-- يتم ملؤها ديناميكياً بواسطة JavaScript -->
+      </div>
+
+      <!-- شريط الملخص السفلي وأزرار الإجراء -->
+      <div class="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 shrink-0">
+        <div class="text-xs">
+          <span class="text-slate-500">إجمالي المبلغ المحوّل للإدخار:</span>
+          <span id="sweepTotalSumDisplay" class="font-black text-base sm:text-lg text-emerald-700 mr-1.5">0 دج</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button
+            type="button"
+            onclick="closeSweepModal()"
+            class="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition"
+          >
+            إلغاء
+          </button>
+          <button
+            type="button"
+            onclick="confirmEnvelopeSweep()"
+            id="sweepConfirmBtn"
+            class="px-5 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold text-white bg-emerald-600 hover:bg-emerald-500 active:scale-95 shadow-md shadow-emerald-700/20 transition flex items-center gap-1.5"
+          >
+            <i class="fa-solid fa-check"></i>
+            <span>تأكيد التصفية والتحويل للإدخار</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 4. نافذة سجل التحويلات المالية بين الحسابات ==================== -->
+  <div id="transfersListModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-4 sm:p-5 shadow-2xl space-y-3.5 max-h-[88vh] flex flex-col">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3 shrink-0">
+        <h3 class="font-bold text-base sm:text-lg text-slate-800 flex items-center gap-2">
+          <i class="fa-solid fa-list-check text-emerald-600"></i>
+          <span>سجل التحويلات بين الحسابات</span>
+        </h3>
+        <button onclick="closeTransfersListModal()" class="text-slate-400 hover:text-slate-600 text-lg">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="flex items-center justify-between text-xs text-slate-500 px-1 shrink-0">
+        <span id="transfersListCount" class="font-bold">0 تحويلات مسجلة</span>
+        <button
+          onclick="closeTransfersListModal(); openTransferModal();"
+          class="bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-bold px-3 py-1.5 rounded-xl flex items-center gap-1.5 shadow-2xs transition text-xs"
+        >
+          <i class="fa-solid fa-plus text-xs"></i> تسجيل تحويل جديد
+        </button>
+      </div>
+
+      <div id="transfersListContainer" class="space-y-2.5 overflow-y-auto pr-1 flex-1">
+        <!-- يتم تعبئتها بواسطة renderTransfersList() -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 5. نافذة تحويل وصرف بين الحسابات ==================== -->
+  <div id="transferModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-5 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <h3 class="font-bold text-base sm:text-lg text-slate-800 flex items-center gap-2">
+          <i class="fa-solid fa-arrow-right-arrow-left text-emerald-600"></i>
+          <span>تحويل مالي بين الحسابات</span>
+        </h3>
+        <button onclick="closeTransferModal()" class="text-slate-400 hover:text-slate-600 text-lg">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <form id="transferForm" onsubmit="handleSaveTransfer(event)" class="space-y-3.5">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">من حساب (المصدر) *</label>
+            <select
+              id="trFromAccount"
+              required
+              class="w-full border border-slate-300 rounded-xl px-3 py-2 text-xs sm:text-sm font-bold text-slate-800 bg-white focus:outline-none focus:border-emerald-500 cursor-pointer"
+            >
+              <option value="حساب CCP">🏦 حساب CCP (دج)</option>
+              <option value="كاش">💵 كاش (دج)</option>
+              <option value="حساب أورو">💶 حساب أورو (€)</option>
+              <option value="حساب USDT">🌐 حساب USDT ($)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">إلى حساب (الوجهة) *</label>
+            <select
+              id="trToAccount"
+              required
+              class="w-full border border-slate-300 rounded-xl px-3 py-2 text-xs sm:text-sm font-bold text-slate-800 bg-white focus:outline-none focus:border-emerald-500 cursor-pointer"
+            >
+              <option value="كاش">💵 كاش (دج)</option>
+              <option value="حساب CCP">🏦 حساب CCP (دج)</option>
+              <option value="حساب أورو">💶 حساب أورو (€)</option>
+              <option value="حساب USDT">🌐 حساب USDT ($)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">المبلغ المحول *</label>
+            <input
+              type="number"
+              step="any"
+              min="1"
+              id="trAmount"
+              required
+              placeholder="50000"
+              class="w-full border border-slate-300 rounded-xl px-3.5 py-2 text-base font-extrabold text-slate-800 focus:outline-none focus:border-emerald-500"
+            />
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">الرسوم (دج)</label>
+            <input
+              type="number"
+              step="any"
+              min="0"
+              id="trFee"
+              value="0"
+              placeholder="62"
+              class="w-full border border-slate-300 rounded-xl px-3.5 py-2 text-base font-bold text-slate-700 focus:outline-none focus:border-emerald-500"
+            />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">سعر الصرف (إن وجد)</label>
+            <input
+              type="number"
+              step="any"
+              min="0"
+              id="trRate"
+              value="1"
+              placeholder="1"
+              class="w-full border border-slate-300 rounded-xl px-3 py-2 text-xs sm:text-sm font-semibold text-slate-700 focus:outline-none focus:border-emerald-500"
+            />
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">التاريخ *</label>
+            <input
+              type="date"
+              id="trDate"
+              required
+              class="w-full border border-slate-300 rounded-xl px-3 py-2 text-xs sm:text-sm font-semibold text-slate-700 focus:outline-none focus:border-emerald-500"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-600 mb-1">البيان / الغرض من التحويل</label>
+          <input
+            type="text"
+            id="trNote"
+            placeholder="مثال: سحب سيولة نقدية لتغذية المصاريف والأظرفة"
+            class="w-full border border-slate-300 rounded-xl px-3 py-2 text-xs sm:text-sm focus:outline-none focus:border-emerald-500"
+          />
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+          <button
+            type="button"
+            onclick="closeTransferModal()"
+            class="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-600 hover:bg-slate-100"
+          >
+            إلغاء
+          </button>
+          <button
+            type="submit"
+            class="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2 rounded-xl text-xs sm:text-sm font-bold shadow-md transition"
+          >
+            تسجيل ومزامنة التحويل
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== 5. نافذة إعدادات ربط Google Sheet ==================== -->
+  <div id="settingsModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-5 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <h3 class="font-bold text-lg text-slate-800 flex items-center gap-2">
+          <i class="fa-solid fa-table text-emerald-600"></i>
+          ربط التطبيق بملف "ميزانية العائلة"
+        </h3>
+        <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-slate-600 text-lg">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="space-y-3 text-xs sm:text-sm text-slate-600 leading-relaxed">
+        <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3.5 text-emerald-900">
+          <p class="font-bold mb-1.5"><i class="fa-solid fa-shield-halved ml-1"></i> حماية كاملة لملفك ومعادلاته:</p>
+          <p class="text-xs mb-2">تم تصميم كود <code>google-apps-script.js</code> ليتطابق 100% مع صفحات ملفك الأربعة دون تغيير أي عمود أو لمس أي معادلة في الشيت.</p>
+          <ol class="list-decimal list-inside space-y-1 text-xs">
+            <li>افتح ملف <b>ميزانية العائلة</b> في Google Sheets.</li>
+            <li>من القائمة العلوية اختر <b>Extensions (الإضافات) &rarr; Apps Script</b>.</li>
+            <li>انسخ الكود الموجود في ملف <code>google-apps-script.js</code> والصقه هناك ثم اضغط حفظ 💾.</li>
+            <li>اضغط <b>Deploy &rarr; New deployment</b>، اختر النوع <b>Web app</b>، واجعل الصلاحية <b>Anyone</b>.</li>
+            <li>انسخ رابط الـ <b>Web App URL</b> الناتج والصقه هنا:</li>
+          </ol>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">رابط Google Apps Script Web App URL</label>
+          <input
+            type="url"
+            id="scriptUrlInput"
+            dir="ltr"
+            placeholder="https://script.google.com/macros/s/......./exec"
+            class="w-full border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm font-mono focus:outline-none focus:border-emerald-500"
+          />
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-slate-100">
+        <button
+          type="button"
+          onclick="resetToSheetSnapshot()"
+          class="text-xs text-rose-600 hover:underline font-semibold"
+        >
+          استعادة نسخة بيانات ملفك الحالية
+        </button>
+
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="closeSettingsModal()" class="px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100">
+            إغلاق
+          </button>
+          <button
+            type="button"
+            onclick="saveSettings()"
+            class="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2 rounded-xl text-sm font-bold shadow"
+          >
+            حفظ ومزامنة الآن
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- إشعار Toast -->
+  <div id="toast" class="fixed top-16 left-1/2 -translate-x-1/2 z-50 hidden bg-slate-900 text-white text-xs sm:text-sm font-semibold px-4 py-2.5 rounded-xl shadow-lg flex items-center gap-2">
+    <i class="fa-solid fa-circle-check text-emerald-400"></i>
+    <span id="toastMsg">تم الحفظ بنجاح</span>
+  </div>
+
+  <script src="app.js?v=34"></script>
+</body>
+</html>
