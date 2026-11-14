@@ -234,59 +234,6 @@
       </div>
     </section>
 
-    <!-- البطاقات الإحصائية الأربع -->
-    <section class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4 w-full min-w-0">
-      <!-- 1. إجمالي الميزانية المخصصة (الراتب + المردودية) -->
-      <div class="bg-white rounded-2xl p-3 sm:p-4 shadow-sm border border-slate-200/70 min-w-0 overflow-hidden flex flex-col justify-between">
-        <div class="flex items-center justify-between text-slate-400 text-xs mb-1">
-          <span id="labelMonthFed" class="truncate text-[11px] sm:text-xs font-semibold">الميزانية الشهرية</span>
-          <span class="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-            <i class="fa-solid fa-coins text-xs"></i>
-          </span>
-        </div>
-        <div id="statMonthFed" class="text-base sm:text-2xl font-extrabold text-slate-800 truncate">121,650 دج</div>
-        <div id="statMonthFedSub" class="text-[10px] sm:text-[11px] text-emerald-600 font-semibold mt-1 break-words leading-tight">104,200 راتب + 17,450 مردودية</div>
-      </div>
-
-      <!-- 2. مصاريف الشهر المحدد -->
-      <div class="bg-white rounded-2xl p-3 sm:p-4 shadow-sm border border-slate-200/70 min-w-0 overflow-hidden flex flex-col justify-between">
-        <div class="flex items-center justify-between text-slate-400 text-xs mb-1">
-          <span id="labelMonthSpent" class="truncate text-[11px] sm:text-xs font-semibold">مصاريف الشهر</span>
-          <span class="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
-            <i class="fa-solid fa-cart-shopping text-xs"></i>
-          </span>
-        </div>
-        <div id="statMonthSpent" class="text-base sm:text-2xl font-extrabold text-rose-600 truncate">0 دج</div>
-        <div id="statMonthPaymentSplit" class="text-[10px] sm:text-[11px] text-slate-500 mt-1 break-words leading-tight">كاش: 0 | بريدي: 0</div>
-      </div>
-
-      <!-- 3. متبقي ميزانية الشهر -->
-      <div class="bg-white rounded-2xl p-3 sm:p-4 shadow-sm border border-slate-200/70 min-w-0 overflow-hidden flex flex-col justify-between">
-        <div class="flex items-center justify-between text-slate-400 text-xs mb-1">
-          <span class="truncate text-[11px] sm:text-xs font-semibold">المتبقي من الميزانية</span>
-          <span class="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-            <i class="fa-solid fa-scale-balanced text-xs"></i>
-          </span>
-        </div>
-        <div id="statMonthRemaining" class="text-base sm:text-2xl font-extrabold text-emerald-600 truncate">0 دج</div>
-        <div class="w-full bg-slate-100 h-2.5 sm:h-3 rounded-full mt-2 overflow-hidden shadow-inner">
-          <div id="statProgressBar" class="bg-emerald-500 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
-        </div>
-      </div>
-
-      <!-- 4. صافي الرصيد الفعلي المتاح في كل الأظرفة (صف 11) -->
-      <div class="bg-white rounded-2xl p-3 sm:p-4 shadow-sm border border-slate-200/70 min-w-0 overflow-hidden flex flex-col justify-between">
-        <div class="flex items-center justify-between text-slate-400 text-xs mb-1">
-          <span class="truncate text-[11px] sm:text-xs font-semibold">صافي رصيد الأظرفة</span>
-          <span class="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
-            <i class="fa-solid fa-vault text-xs"></i>
-          </span>
-        </div>
-        <div id="statTotalNetAvailable" class="text-base sm:text-2xl font-extrabold text-purple-700 truncate">0 دج</div>
-        <div id="statPendingLoansNote" class="text-[10px] sm:text-[11px] text-slate-500 mt-1 break-words leading-tight">سلف معلقة: 0 دج</div>
-      </div>
-    </section>
-
     <!-- ==================== القسم 1: لوحة المؤشرات والرسوم البيانية ==================== -->
     <div id="view-dashboard" class="space-y-4 sm:space-y-6 w-full min-w-0">
 
@@ -496,6 +443,59 @@
 
     <!-- ==================== القسم 4: تغذية الأظرفة والخطة المرجعية ==================== -->
     <div id="view-feeding" class="hidden space-y-6">
+
+      <!-- البطاقات الإحصائية الأربع لشهر المحدد والتغذية -->
+      <section class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4 w-full min-w-0">
+        <!-- 1. إجمالي الميزانية المخصصة (الراتب + المردودية) -->
+        <div class="bg-white rounded-2xl p-3 sm:p-4 shadow-sm border border-slate-200/70 min-w-0 overflow-hidden flex flex-col justify-between">
+          <div class="flex items-center justify-between text-slate-400 text-xs mb-1">
+            <span id="labelMonthFed" class="truncate text-[11px] sm:text-xs font-semibold">الميزانية الشهرية</span>
+            <span class="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+              <i class="fa-solid fa-coins text-xs"></i>
+            </span>
+          </div>
+          <div id="statMonthFed" class="text-base sm:text-2xl font-extrabold text-slate-800 truncate">121,650 دج</div>
+          <div id="statMonthFedSub" class="text-[10px] sm:text-[11px] text-emerald-600 font-semibold mt-1 break-words leading-tight">104,200 راتب + 17,450 مردودية</div>
+        </div>
+
+        <!-- 2. مصاريف الشهر المحدد -->
+        <div class="bg-white rounded-2xl p-3 sm:p-4 shadow-sm border border-slate-200/70 min-w-0 overflow-hidden flex flex-col justify-between">
+          <div class="flex items-center justify-between text-slate-400 text-xs mb-1">
+            <span id="labelMonthSpent" class="truncate text-[11px] sm:text-xs font-semibold">مصاريف الشهر</span>
+            <span class="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
+              <i class="fa-solid fa-cart-shopping text-xs"></i>
+            </span>
+          </div>
+          <div id="statMonthSpent" class="text-base sm:text-2xl font-extrabold text-rose-600 truncate">0 دج</div>
+          <div id="statMonthPaymentSplit" class="text-[10px] sm:text-[11px] text-slate-500 mt-1 break-words leading-tight">كاش: 0 | بريدي: 0</div>
+        </div>
+
+        <!-- 3. متبقي ميزانية الشهر -->
+        <div class="bg-white rounded-2xl p-3 sm:p-4 shadow-sm border border-slate-200/70 min-w-0 overflow-hidden flex flex-col justify-between">
+          <div class="flex items-center justify-between text-slate-400 text-xs mb-1">
+            <span class="truncate text-[11px] sm:text-xs font-semibold">المتبقي من الميزانية</span>
+            <span class="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+              <i class="fa-solid fa-scale-balanced text-xs"></i>
+            </span>
+          </div>
+          <div id="statMonthRemaining" class="text-base sm:text-2xl font-extrabold text-emerald-600 truncate">0 دج</div>
+          <div class="w-full bg-slate-100 h-2.5 sm:h-3 rounded-full mt-2 overflow-hidden shadow-inner">
+            <div id="statProgressBar" class="bg-emerald-500 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <!-- 4. صافي الرصيد الفعلي المتاح في كل الأظرفة (صف 11) -->
+        <div class="bg-white rounded-2xl p-3 sm:p-4 shadow-sm border border-slate-200/70 min-w-0 overflow-hidden flex flex-col justify-between">
+          <div class="flex items-center justify-between text-slate-400 text-xs mb-1">
+            <span class="truncate text-[11px] sm:text-xs font-semibold">صافي رصيد الأظرفة</span>
+            <span class="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
+              <i class="fa-solid fa-vault text-xs"></i>
+            </span>
+          </div>
+          <div id="statTotalNetAvailable" class="text-base sm:text-2xl font-extrabold text-purple-700 truncate">0 دج</div>
+          <div id="statPendingLoansNote" class="text-[10px] sm:text-[11px] text-slate-500 mt-1 break-words leading-tight">سلف معلقة: 0 دج</div>
+        </div>
+      </section>
 
       <!-- ملخص الأظرفة الموحدة (الخطة المرجعية الرسمية) -->
       <div class="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-200/70 space-y-4">
@@ -1417,6 +1417,6 @@
     <span id="toastMsg">تم الحفظ بنجاح</span>
   </div>
 
-  <script src="app.js?v=34"></script>
+  <script src="app.js?v=35"></script>
 </body>
 </html>

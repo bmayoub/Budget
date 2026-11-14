@@ -1,4 +1,4 @@
-const CACHE_NAME = 'budget-pwa-v34-precise-liquidity-split';
+const CACHE_NAME = 'budget-pwa-v35-kpi-in-feeding-only';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
