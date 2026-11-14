@@ -1,4 +1,4 @@
-const CACHE_NAME = 'budget-pwa-v40-clean-category-headers';
+const CACHE_NAME = 'budget-pwa-v41-fix-edit-expense';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();

@@ -446,7 +446,7 @@ function doPost(e) {
       ]]);
     }
 
-    else if (action === 'editExpense') {
+    else if (action === 'editExpense' || action === 'updateExpense') {
       const expSheet = ss.getSheetByName(SHEET_NAMES.EXPENSES);
       const item = payload.expense;
       const rowIndex = Number(item.rowIndex);
@@ -574,7 +574,7 @@ function doPost(e) {
       }
     }
 
-    else if (action === 'editLoan') {
+    else if (action === 'editLoan' || action === 'updateLoan') {
       const loanSheet = ss.getSheetByName(SHEET_NAMES.LOANS);
       const item = payload.loan;
       const r = Number(item.rowIndex);

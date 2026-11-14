@@ -2022,7 +2022,7 @@ async function handleSaveExpense(event) {
     note: document.getElementById('expNote').value.trim()
   };
 
-  // محاكاة العملية أولاً للتأكد بنسبة 100% من عدم تحول أي ظرف إلى قيمة سالبة
+  // محاكاة العملية أولاً للتأكد بنسبة 100% من عدم تحول الظرف المستهدف إلى قيمة سالبة
   const simData = JSON.parse(JSON.stringify(state.data));
   if (isUpdate) {
     const idx = simData.expenses.findIndex(e => Number(e.rowIndex) === Number(rowIndexInput));
@@ -2031,7 +2031,7 @@ async function handleSaveExpense(event) {
     simData.expenses.push(expenseObj);
   }
   recalculateSheetFormulasLocally(simData);
-  const negEnv = simData.envelopes.find(e => Number(e.netBalance) < 0);
+  const negEnv = simData.envelopes.find(e => e.name === envelope && Number(e.netBalance) < 0);
   if (negEnv) {
     const errMsg = `❌ عملية مرفوضة: هذه العملية ستجعل رصيد ظرف "${negEnv.name}" سالباً (${formatDZD(negEnv.netBalance)}) وهو غير مسموح!`;
     showToast(errMsg, true);
@@ -2039,11 +2039,28 @@ async function handleSaveExpense(event) {
     return;
   }
 
+  // تحديث فوري محلي لأرصدة الحسابات (كاش / CCP) قبل اكتمال المزامنة
+  const adjustAccountForExpense = (expItem, direction) => {
+    if (!expItem || !state.data.accounts) return;
+    const amt = (Number(expItem.amount) || 0) * direction;
+    const pm = String(expItem.paymentMethod || 'كاش');
+    const key = pm === 'كاش' ? 'cash' : (pm.includes('أورو') ? 'euro' : (pm.includes('USDT') ? 'usdt' : 'ccp'));
+    if (state.data.accounts[key]) {
+      state.data.accounts[key].totalOut = Math.max(0, (Number(state.data.accounts[key].totalOut) || 0) + amt);
+      state.data.accounts[key].balance = (Number(state.data.accounts[key].balance) || 0) - amt;
+    }
+  };
+
   if (isUpdate) {
     const idx = state.data.expenses.findIndex(e => Number(e.rowIndex) === Number(rowIndexInput));
-    if (idx !== -1) state.data.expenses[idx] = expenseObj;
+    if (idx !== -1) {
+      adjustAccountForExpense(state.data.expenses[idx], -1);
+      state.data.expenses[idx] = expenseObj;
+      adjustAccountForExpense(expenseObj, 1);
+    }
   } else {
     state.data.expenses.push(expenseObj);
+    adjustAccountForExpense(expenseObj, 1);
   }
 
   saveToLocal();
@@ -2054,7 +2071,7 @@ async function handleSaveExpense(event) {
 
   if (state.scriptUrl) {
     await postToGoogleSheet({
-      action: isUpdate ? 'updateExpense' : 'addExpense',
+      action: isUpdate ? 'editExpense' : 'addExpense',
       expense: expenseObj
     });
   }
@@ -2333,7 +2350,7 @@ async function handleSaveLoan(event) {
 
   if (state.scriptUrl) {
     await postToGoogleSheet({
-      action: isUpdate ? 'updateLoan' : 'addLoan',
+      action: isUpdate ? 'editLoan' : 'addLoan',
       loan: loanObj
     });
   }
@@ -3444,6 +3461,8 @@ async function postToGoogleSheet(payload) {
       saveToLocal();
       populateMonthSelector();
       renderAll();
+    } else if (resData && resData.status === 'error') {
+      showToast(resData.message || 'تعذر تنفيذ العملية في الشيت', true);
     }
   } catch (err) {
     console.error('Post error:', err);
