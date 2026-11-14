@@ -157,91 +157,91 @@
       </div>
     </div>
 
-    <!-- بطاقات الحسابات الأربعة ومحافظ السيولة (كاش، CCP، أورو، USDT) - قابلة للطي عند النقر -->
-    <section
-      onclick="toggleAccountsSection(event)"
-      class="bg-white rounded-2xl p-3 sm:p-4 shadow-sm border border-slate-200/70 hover:border-slate-300 transition cursor-pointer select-none min-w-0 w-full overflow-hidden"
-    >
-      <div id="accountsHeaderBar" class="flex items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
-        <div class="flex items-center gap-2 min-w-0">
-          <span class="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-sm font-bold shrink-0">
-            <i class="fa-solid fa-wallet"></i>
-          </span>
-          <div class="min-w-0">
-            <div class="flex items-center gap-1.5">
-              <h2 class="text-xs sm:text-sm font-extrabold text-slate-800 truncate">أرصدة الحسابات ومحافظ السيولة</h2>
-              <i id="accountsCollapseChevron" class="fa-solid fa-chevron-down text-slate-400 text-[11px] transition-transform duration-200 rotate-180"></i>
-            </div>
-            <p class="text-[10px] text-slate-400 truncate">الحسابات الأربعة من صفحة "إدارة الحسابات" (انقر للطي أو الفتح)</p>
-          </div>
-        </div>
-        <button
-          onclick="event.stopPropagation(); openTransfersListModal()"
-          class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-white text-[11px] sm:text-xs font-bold px-3 py-1.5 rounded-xl flex items-center gap-1.5 shadow-2xs transition shrink-0"
-          title="عرض قائمة كافة التحويلات بين الحسابات وتسجيل تحويل جديد"
-        >
-          <i class="fa-solid fa-arrow-right-arrow-left text-[10px] text-emerald-400"></i>
-          <span>سجل التحويلات</span>
-        </button>
-      </div>
-
-      <div id="accountsGridWrap" class="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 pt-3">
-        <!-- 1. حساب CCP -->
-        <div class="bg-gradient-to-br from-blue-50/60 to-white p-2.5 sm:p-3 rounded-xl border border-blue-200/70 space-y-1 min-w-0">
-          <div class="flex items-center justify-between text-slate-500 text-[11px]">
-            <span class="font-bold flex items-center gap-1 truncate"><i class="fa-solid fa-building-columns text-blue-600 shrink-0"></i> حساب CCP</span>
-            <span class="text-[9px] bg-blue-100 text-blue-800 px-1 py-0.5 rounded font-bold shrink-0">دج</span>
-          </div>
-          <div id="accBalance-ccp" class="text-sm sm:text-lg font-extrabold text-blue-900 truncate">54,138 دج</div>
-          <div class="flex items-center justify-between text-[10px] text-slate-500 pt-0.5 border-t border-blue-100/60 truncate">
-            <span>وارد: <b id="accIn-ccp" class="text-emerald-600 font-bold">104,200</b></span>
-            <span>صرف: <b id="accOut-ccp" class="text-rose-600 font-bold">50,062</b></span>
-          </div>
-        </div>
-
-        <!-- 2. كاش -->
-        <div class="bg-gradient-to-br from-emerald-50/60 to-white p-2.5 sm:p-3 rounded-xl border border-emerald-200/70 space-y-1 min-w-0">
-          <div class="flex items-center justify-between text-slate-500 text-[11px]">
-            <span class="font-bold flex items-center gap-1 truncate"><i class="fa-solid fa-money-bill-wave text-emerald-600 shrink-0"></i> كاش</span>
-            <span class="text-[9px] bg-emerald-100 text-emerald-800 px-1 py-0.5 rounded font-bold shrink-0">دج</span>
-          </div>
-          <div id="accBalance-cash" class="text-sm sm:text-lg font-extrabold text-emerald-900 truncate">50,000 دج</div>
-          <div class="flex items-center justify-between text-[10px] text-slate-500 pt-0.5 border-t border-emerald-100/60 truncate">
-            <span>وارد: <b id="accIn-cash" class="text-emerald-600 font-bold">50,000</b></span>
-            <span>صرف: <b id="accOut-cash" class="text-rose-600 font-bold">0</b></span>
-          </div>
-        </div>
-
-        <!-- 3. حساب أورو -->
-        <div class="bg-gradient-to-br from-amber-50/60 to-white p-2.5 sm:p-3 rounded-xl border border-amber-200/70 space-y-1 min-w-0">
-          <div class="flex items-center justify-between text-slate-500 text-[11px]">
-            <span class="font-bold flex items-center gap-1 truncate"><i class="fa-solid fa-euro-sign text-amber-600 shrink-0"></i> حساب أورو</span>
-            <span class="text-[9px] bg-amber-100 text-amber-800 px-1 py-0.5 rounded font-bold shrink-0">EURO</span>
-          </div>
-          <div id="accBalance-euro" class="text-sm sm:text-lg font-extrabold text-amber-900 truncate">0.00 €</div>
-          <div class="flex items-center justify-between text-[10px] text-slate-500 pt-0.5 border-t border-amber-100/60 truncate">
-            <span>وارد: <b id="accIn-euro" class="text-emerald-600 font-bold">0.00 €</b></span>
-            <span>صرف: <b id="accOut-euro" class="text-rose-600 font-bold">0.00 €</b></span>
-          </div>
-        </div>
-
-        <!-- 4. حساب USDT -->
-        <div class="bg-gradient-to-br from-purple-50/60 to-white p-2.5 sm:p-3 rounded-xl border border-purple-200/70 space-y-1 min-w-0">
-          <div class="flex items-center justify-between text-slate-500 text-[11px]">
-            <span class="font-bold flex items-center gap-1 truncate"><i class="fa-solid fa-coins text-purple-600 shrink-0"></i> حساب USDT</span>
-            <span class="text-[9px] bg-purple-100 text-purple-800 px-1 py-0.5 rounded font-bold shrink-0">USDT</span>
-          </div>
-          <div id="accBalance-usdt" class="text-sm sm:text-lg font-extrabold text-purple-900 truncate">0.00 $</div>
-          <div class="flex items-center justify-between text-[10px] text-slate-500 pt-0.5 border-t border-purple-100/60 truncate">
-            <span>وارد: <b id="accIn-usdt" class="text-emerald-600 font-bold">0.00 $</b></span>
-            <span>صرف: <b id="accOut-usdt" class="text-rose-600 font-bold">0.00 $</b></span>
-          </div>
-        </div>
-      </div>
-    </section>
-
     <!-- ==================== القسم 1: لوحة المؤشرات والرسوم البيانية ==================== -->
     <div id="view-dashboard" class="space-y-4 sm:space-y-6 w-full min-w-0">
+
+      <!-- بطاقات الحسابات الأربعة ومحافظ السيولة (كاش، CCP، أورو، USDT) - قابلة للطي عند النقر -->
+      <section
+        onclick="toggleAccountsSection(event)"
+        class="bg-white rounded-2xl p-3 sm:p-4 shadow-sm border border-slate-200/70 hover:border-slate-300 transition cursor-pointer select-none min-w-0 w-full overflow-hidden"
+      >
+        <div id="accountsHeaderBar" class="flex items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
+          <div class="flex items-center gap-2 min-w-0">
+            <span class="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-sm font-bold shrink-0">
+              <i class="fa-solid fa-wallet"></i>
+            </span>
+            <div class="min-w-0">
+              <div class="flex items-center gap-1.5">
+                <h2 class="text-xs sm:text-sm font-extrabold text-slate-800 truncate">أرصدة الحسابات ومحافظ السيولة</h2>
+                <i id="accountsCollapseChevron" class="fa-solid fa-chevron-down text-slate-400 text-[11px] transition-transform duration-200 rotate-180"></i>
+              </div>
+              <p class="text-[10px] text-slate-400 truncate">الحسابات الأربعة من صفحة "إدارة الحسابات" (انقر للطي أو الفتح)</p>
+            </div>
+          </div>
+          <button
+            onclick="event.stopPropagation(); openTransfersListModal()"
+            class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-white text-[11px] sm:text-xs font-bold px-3 py-1.5 rounded-xl flex items-center gap-1.5 shadow-2xs transition shrink-0"
+            title="عرض قائمة كافة التحويلات بين الحسابات وتسجيل تحويل جديد"
+          >
+            <i class="fa-solid fa-arrow-right-arrow-left text-[10px] text-emerald-400"></i>
+            <span>سجل التحويلات</span>
+          </button>
+        </div>
+
+        <div id="accountsGridWrap" class="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 pt-3">
+          <!-- 1. حساب CCP -->
+          <div class="bg-gradient-to-br from-blue-50/60 to-white p-2.5 sm:p-3 rounded-xl border border-blue-200/70 space-y-1 min-w-0">
+            <div class="flex items-center justify-between text-slate-500 text-[11px]">
+              <span class="font-bold flex items-center gap-1 truncate"><i class="fa-solid fa-building-columns text-blue-600 shrink-0"></i> حساب CCP</span>
+              <span class="text-[9px] bg-blue-100 text-blue-800 px-1 py-0.5 rounded font-bold shrink-0">دج</span>
+            </div>
+            <div id="accBalance-ccp" class="text-sm sm:text-lg font-extrabold text-blue-900 truncate">54,138 دج</div>
+            <div class="flex items-center justify-between text-[10px] text-slate-500 pt-0.5 border-t border-blue-100/60 truncate">
+              <span>وارد: <b id="accIn-ccp" class="text-emerald-600 font-bold">104,200</b></span>
+              <span>صرف: <b id="accOut-ccp" class="text-rose-600 font-bold">50,062</b></span>
+            </div>
+          </div>
+
+          <!-- 2. كاش -->
+          <div class="bg-gradient-to-br from-emerald-50/60 to-white p-2.5 sm:p-3 rounded-xl border border-emerald-200/70 space-y-1 min-w-0">
+            <div class="flex items-center justify-between text-slate-500 text-[11px]">
+              <span class="font-bold flex items-center gap-1 truncate"><i class="fa-solid fa-money-bill-wave text-emerald-600 shrink-0"></i> كاش</span>
+              <span class="text-[9px] bg-emerald-100 text-emerald-800 px-1 py-0.5 rounded font-bold shrink-0">دج</span>
+            </div>
+            <div id="accBalance-cash" class="text-sm sm:text-lg font-extrabold text-emerald-900 truncate">50,000 دج</div>
+            <div class="flex items-center justify-between text-[10px] text-slate-500 pt-0.5 border-t border-emerald-100/60 truncate">
+              <span>وارد: <b id="accIn-cash" class="text-emerald-600 font-bold">50,000</b></span>
+              <span>صرف: <b id="accOut-cash" class="text-rose-600 font-bold">0</b></span>
+            </div>
+          </div>
+
+          <!-- 3. حساب أورو -->
+          <div class="bg-gradient-to-br from-amber-50/60 to-white p-2.5 sm:p-3 rounded-xl border border-amber-200/70 space-y-1 min-w-0">
+            <div class="flex items-center justify-between text-slate-500 text-[11px]">
+              <span class="font-bold flex items-center gap-1 truncate"><i class="fa-solid fa-euro-sign text-amber-600 shrink-0"></i> حساب أورو</span>
+              <span class="text-[9px] bg-amber-100 text-amber-800 px-1 py-0.5 rounded font-bold shrink-0">EURO</span>
+            </div>
+            <div id="accBalance-euro" class="text-sm sm:text-lg font-extrabold text-amber-900 truncate">0.00 €</div>
+            <div class="flex items-center justify-between text-[10px] text-slate-500 pt-0.5 border-t border-amber-100/60 truncate">
+              <span>وارد: <b id="accIn-euro" class="text-emerald-600 font-bold">0.00 €</b></span>
+              <span>صرف: <b id="accOut-euro" class="text-rose-600 font-bold">0.00 €</b></span>
+            </div>
+          </div>
+
+          <!-- 4. حساب USDT -->
+          <div class="bg-gradient-to-br from-purple-50/60 to-white p-2.5 sm:p-3 rounded-xl border border-purple-200/70 space-y-1 min-w-0">
+            <div class="flex items-center justify-between text-slate-500 text-[11px]">
+              <span class="font-bold flex items-center gap-1 truncate"><i class="fa-solid fa-coins text-purple-600 shrink-0"></i> حساب USDT</span>
+              <span class="text-[9px] bg-purple-100 text-purple-800 px-1 py-0.5 rounded font-bold shrink-0">USDT</span>
+            </div>
+            <div id="accBalance-usdt" class="text-sm sm:text-lg font-extrabold text-purple-900 truncate">0.00 $</div>
+            <div class="flex items-center justify-between text-[10px] text-slate-500 pt-0.5 border-t border-purple-100/60 truncate">
+              <span>وارد: <b id="accIn-usdt" class="text-emerald-600 font-bold">0.00 $</b></span>
+              <span>صرف: <b id="accOut-usdt" class="text-rose-600 font-bold">0.00 $</b></span>
+            </div>
+          </div>
+        </div>
+      </section>
 
       <!-- فلتر نوع الأظرفة للرسوم البيانية -->
       <div class="bg-white rounded-2xl p-3 sm:p-3.5 shadow-sm border border-slate-200/70 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 min-w-0 w-full overflow-hidden">
@@ -1426,6 +1426,6 @@
     <span id="toastMsg">تم الحفظ بنجاح</span>
   </div>
 
-  <script src="app.js?v=38"></script>
+  <script src="app.js?v=39"></script>
 </body>
 </html>

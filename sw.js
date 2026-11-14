@@ -1,4 +1,4 @@
-const CACHE_NAME = 'budget-pwa-v38-expenses-filtered-stats';
+const CACHE_NAME = 'budget-pwa-v39-accounts-in-dashboard-only';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
