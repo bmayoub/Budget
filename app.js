@@ -103,6 +103,7 @@ let state = {
   pieChartMetric: 'SPENT', // 'SPENT' | 'ALLOCATED' | 'NET_BALANCE'
   editingCycleRowIndex: null,
   expandedEnvelopes: new Set(),
+  collapsedCategories: new Set(),
   data: null
 };
 
@@ -1230,6 +1231,21 @@ function toggleEnvelopeExpand(envName, event) {
   renderDashboardEnvelopesGrid();
 }
 
+function toggleCategoryCollapse(majorCat, event) {
+  if (event && typeof event.stopPropagation === 'function') {
+    event.stopPropagation();
+  }
+  if (!state.collapsedCategories) {
+    state.collapsedCategories = new Set();
+  }
+  if (state.collapsedCategories.has(majorCat)) {
+    state.collapsedCategories.delete(majorCat);
+  } else {
+    state.collapsedCategories.add(majorCat);
+  }
+  renderDashboardEnvelopesGrid();
+}
+
 // عرض الأظرفة الـ 23 في لوحة التحكم مقسمة حسب الفئات المعتمدة في "الأظرفة الموحدة"
 function renderDashboardEnvelopesGrid() {
   const container = document.getElementById('dashboardEnvelopesGrid');
@@ -1280,14 +1296,20 @@ function renderDashboardEnvelopesGrid() {
       : 'bg-purple-900 text-white';
 
     const icon = majorCat === 'أساسيات' ? '🟢' : majorCat === 'كماليات' ? '🟠' : majorCat === 'استثمار وادخار' ? '🔵' : '🟣';
+    const isCatCollapsed = state.collapsedCategories && state.collapsedCategories.has(majorCat);
 
     return `
       <div class="rounded-2xl border border-slate-200 overflow-hidden bg-slate-50/50">
-        <!-- شريط عنوان التصنيف الكبير وإجمالياته -->
-        <div class="${headerStyle} px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+        <!-- شريط عنوان التصنيف الكبير وإجمالياته (قابل للطي عند النقر) -->
+        <div
+          onclick="toggleCategoryCollapse('${escapeHtml(majorCat)}', event)"
+          class="${headerStyle} px-4 py-3 flex flex-wrap items-center justify-between gap-3 cursor-pointer select-none hover:opacity-95 transition"
+          title="انقر لطي أو فتح هذا التصنيف"
+        >
           <div class="flex items-center gap-2">
             <span class="text-base">${icon}</span>
             <span class="font-extrabold text-sm sm:text-base">تصنيف: ${majorCat} (${catEnvs.length} أظرفة)</span>
+            <i class="fa-solid fa-chevron-down text-white/80 text-xs transition-transform duration-200 mr-1 ${isCatCollapsed ? 'rotate-180' : ''}"></i>
           </div>
           <div class="hidden lg:flex flex-wrap items-center gap-2 sm:gap-3 text-xs">
             <span class="bg-white/15 px-2.5 py-1 rounded-lg">المخصص: <b>${formatDZD(catAlloc)}</b></span>
@@ -1298,7 +1320,7 @@ function renderDashboardEnvelopesGrid() {
         </div>
 
         <!-- شبكة أظرفة هذا التصنيف -->
-        <div class="p-3.5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div class="p-3.5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 ${isCatCollapsed ? 'hidden' : ''}">
           ${catEnvs.map(env => {
             // الأظرفة التي أشهر تراكمها 0 هي أظرفة صرف دوري وليس لها هدف (فقط الأظرفة ذات التراكم > 0 تعتبر حصالات تراكمية)
             const isSavingsGoal = Number(env.accumulationMonths) > 0;
