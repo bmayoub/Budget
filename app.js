@@ -1747,6 +1747,87 @@ function renderExpensesList() {
 
   list.sort((a, b) => String(b.date).localeCompare(String(a.date)));
 
+  const statsContainer = document.getElementById('expensesFilteredStats');
+  if (statsContainer) {
+    if (list.length === 0) {
+      statsContainer.innerHTML = '';
+    } else {
+      const totalAmount = list.reduce((s, e) => s + (Number(e.amount) || 0), 0);
+      const cashAmount = list.filter(e => e.paymentMethod === 'كاش').reduce((s, e) => s + (Number(e.amount) || 0), 0);
+      const baridiAmount = totalAmount - cashAmount;
+
+      // حساب تكرار البنود (البيان) وإجمالي كل بند
+      const itemMap = {};
+      list.forEach(e => {
+        const rawName = String(e.statement || e.envelope || 'غير محدد').trim();
+        const key = rawName.toLowerCase();
+        if (!itemMap[key]) {
+          itemMap[key] = { name: rawName, count: 0, total: 0 };
+        }
+        itemMap[key].count += 1;
+        itemMap[key].total += (Number(e.amount) || 0);
+      });
+
+      const itemsArr = Object.values(itemMap);
+      itemsArr.sort((a, b) => (b.count - a.count) || (b.total - a.total));
+      const topFreqItem = itemsArr[0];
+
+      const byTotalArr = [...itemsArr].sort((a, b) => (b.total - a.total) || (b.count - a.count));
+      const topSpentItem = byTotalArr[0];
+
+      const countWord = (n) => (n === 1 ? 'مرة واحدة' : n === 2 ? 'مرتين' : `${n} مرات`);
+      const opWord = (n) => (n === 1 ? 'عملية' : n === 2 ? 'عمليتين' : `${n} عمليات`);
+
+      statsContainer.innerHTML = `
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+          <!-- 1. إجمالي القائمة المفلترة وعدد العمليات -->
+          <div class="bg-white rounded-2xl p-3.5 shadow-sm border border-slate-200/70 flex items-center justify-between gap-3">
+            <div class="min-w-0">
+              <div class="text-[11px] font-bold text-slate-400">إجمالي القائمة (${opWord(list.length)})</div>
+              <div class="text-base sm:text-lg font-extrabold text-rose-600 mt-0.5 truncate">${formatDZD(totalAmount)}</div>
+              <div class="text-[10px] text-slate-500 mt-0.5 truncate">كاش: ${formatDZD(cashAmount)} | بريدي: ${formatDZD(baridiAmount)}</div>
+            </div>
+            <div class="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
+              <i class="fa-solid fa-calculator text-sm"></i>
+            </div>
+          </div>
+
+          <!-- 2. أكثر بند متكرر وعدد مصاريفه -->
+          <div class="bg-white rounded-2xl p-3.5 shadow-sm border border-amber-200/80 flex items-center justify-between gap-3">
+            <div class="min-w-0">
+              <div class="text-[11px] font-bold text-amber-700">🔁 أكثر بند متكرر</div>
+              <div class="text-sm sm:text-base font-extrabold text-slate-800 mt-0.5 truncate" title="${escapeHtml(topFreqItem.name)}">
+                ${escapeHtml(topFreqItem.name)}
+              </div>
+              <div class="text-[11px] font-bold text-amber-600 mt-0.5 truncate">
+                عدد مصاريفه: ${countWord(topFreqItem.count)} • (${formatDZD(topFreqItem.total)})
+              </div>
+            </div>
+            <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center font-extrabold text-xs shrink-0 border border-amber-200">
+              ×${topFreqItem.count}
+            </div>
+          </div>
+
+          <!-- 3. الأعلى تكلفة في القائمة -->
+          <div class="bg-white rounded-2xl p-3.5 shadow-sm border border-indigo-200/80 flex items-center justify-between gap-3">
+            <div class="min-w-0">
+              <div class="text-[11px] font-bold text-indigo-700">🔥 الأعلى تكلفة</div>
+              <div class="text-sm sm:text-base font-extrabold text-slate-800 mt-0.5 truncate" title="${escapeHtml(topSpentItem.name)}">
+                ${escapeHtml(topSpentItem.name)}
+              </div>
+              <div class="text-[11px] font-bold text-indigo-600 mt-0.5 truncate">
+                إجمالي: ${formatDZD(topSpentItem.total)} (${opWord(topSpentItem.count)})
+              </div>
+            </div>
+            <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 border border-indigo-200">
+              <i class="fa-solid fa-arrow-trend-up text-sm"></i>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+  }
+
   if (list.length === 0) {
     container.innerHTML = `
       <div class="bg-white rounded-2xl p-8 text-center border border-slate-200/70">

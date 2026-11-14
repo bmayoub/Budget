@@ -1,4 +1,4 @@
-const CACHE_NAME = 'budget-pwa-v37-envelope-expenses-shortcut';
+const CACHE_NAME = 'budget-pwa-v38-expenses-filtered-stats';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
