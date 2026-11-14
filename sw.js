@@ -1,4 +1,4 @@
-const CACHE_NAME = 'budget-pwa-v42-collapsible-categories';
+const CACHE_NAME = 'budget-pwa-v43-envelope-loans-in-log';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();

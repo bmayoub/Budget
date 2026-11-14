@@ -1769,99 +1769,264 @@ function renderExpensesList() {
 
   list.sort((a, b) => String(b.date).localeCompare(String(a.date)));
 
+  // استخراج الاستلافات والتحويلات المرتبطة بالظرف المحدد (التي قام بها الظرف أو أُخذت منه)
+  const allLoans = (state.data && Array.isArray(state.data.loans)) ? state.data.loans : [];
+  let envLoans = [];
+  if (envFilter !== 'ALL') {
+    envLoans = allLoans.filter(l => {
+      const isRelated = (l.fromEnvelope === envFilter || l.toEnvelope === envFilter);
+      if (!isRelated) return false;
+      if (query) {
+        return (
+          String(l.reason || '').toLowerCase().includes(query) ||
+          String(l.note || '').toLowerCase().includes(query) ||
+          String(l.fromEnvelope || '').toLowerCase().includes(query) ||
+          String(l.toEnvelope || '').toLowerCase().includes(query) ||
+          String(l.type || '').toLowerCase().includes(query)
+        );
+      }
+      return true;
+    }).sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+  }
+
+  const countWord = (n) => (n === 1 ? 'مرة واحدة' : n === 2 ? 'مرتين' : `${n} مرات`);
+  const opWord = (n) => (n === 1 ? 'عملية' : n === 2 ? 'عمليتين' : `${n} عمليات`);
+
   const statsContainer = document.getElementById('expensesFilteredStats');
   if (statsContainer) {
-    if (list.length === 0) {
+    if (list.length === 0 && envLoans.length === 0) {
       statsContainer.innerHTML = '';
     } else {
-      const totalAmount = list.reduce((s, e) => s + (Number(e.amount) || 0), 0);
-      const cashAmount = list.filter(e => e.paymentMethod === 'كاش').reduce((s, e) => s + (Number(e.amount) || 0), 0);
-      const baridiAmount = totalAmount - cashAmount;
+      let expenseStatsHtml = '';
+      if (list.length > 0) {
+        const totalAmount = list.reduce((s, e) => s + (Number(e.amount) || 0), 0);
+        const cashAmount = list.filter(e => e.paymentMethod === 'كاش').reduce((s, e) => s + (Number(e.amount) || 0), 0);
+        const baridiAmount = totalAmount - cashAmount;
 
-      // حساب تكرار البنود (البيان) وإجمالي كل بند
-      const itemMap = {};
-      list.forEach(e => {
-        const rawName = String(e.statement || e.envelope || 'غير محدد').trim();
-        const key = rawName.toLowerCase();
-        if (!itemMap[key]) {
-          itemMap[key] = { name: rawName, count: 0, total: 0 };
-        }
-        itemMap[key].count += 1;
-        itemMap[key].total += (Number(e.amount) || 0);
-      });
+        // حساب تكرار البنود (البيان) وإجمالي كل بند
+        const itemMap = {};
+        list.forEach(e => {
+          const rawName = String(e.statement || e.envelope || 'غير محدد').trim();
+          const key = rawName.toLowerCase();
+          if (!itemMap[key]) {
+            itemMap[key] = { name: rawName, count: 0, total: 0 };
+          }
+          itemMap[key].count += 1;
+          itemMap[key].total += (Number(e.amount) || 0);
+        });
 
-      const itemsArr = Object.values(itemMap);
-      itemsArr.sort((a, b) => (b.count - a.count) || (b.total - a.total));
-      const topFreqItem = itemsArr[0];
+        const itemsArr = Object.values(itemMap);
+        itemsArr.sort((a, b) => (b.count - a.count) || (b.total - a.total));
+        const topFreqItem = itemsArr[0];
 
-      const byTotalArr = [...itemsArr].sort((a, b) => (b.total - a.total) || (b.count - a.count));
-      const topSpentItem = byTotalArr[0];
+        const byTotalArr = [...itemsArr].sort((a, b) => (b.total - a.total) || (b.count - a.count));
+        const topSpentItem = byTotalArr[0];
 
-      const countWord = (n) => (n === 1 ? 'مرة واحدة' : n === 2 ? 'مرتين' : `${n} مرات`);
-      const opWord = (n) => (n === 1 ? 'عملية' : n === 2 ? 'عمليتين' : `${n} عمليات`);
-
-      statsContainer.innerHTML = `
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-          <!-- 1. إجمالي القائمة المفلترة وعدد العمليات -->
-          <div class="bg-white rounded-2xl p-3.5 shadow-sm border border-slate-200/70 flex items-center justify-between gap-3">
-            <div class="min-w-0">
-              <div class="text-[11px] font-bold text-slate-400">إجمالي القائمة (${opWord(list.length)})</div>
-              <div class="text-base sm:text-lg font-extrabold text-rose-600 mt-0.5 truncate">${formatDZD(totalAmount)}</div>
-              <div class="text-[10px] text-slate-500 mt-0.5 truncate">كاش: ${formatDZD(cashAmount)} | بريدي: ${formatDZD(baridiAmount)}</div>
+        expenseStatsHtml = `
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+            <!-- 1. إجمالي القائمة المفلترة وعدد العمليات -->
+            <div class="bg-white rounded-2xl p-3.5 shadow-sm border border-slate-200/70 flex items-center justify-between gap-3">
+              <div class="min-w-0">
+                <div class="text-[11px] font-bold text-slate-400">إجمالي المصاريف (${opWord(list.length)})</div>
+                <div class="text-base sm:text-lg font-extrabold text-rose-600 mt-0.5 truncate">${formatDZD(totalAmount)}</div>
+                <div class="text-[10px] text-slate-500 mt-0.5 truncate">كاش: ${formatDZD(cashAmount)} | بريدي: ${formatDZD(baridiAmount)}</div>
+              </div>
+              <div class="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
+                <i class="fa-solid fa-calculator text-sm"></i>
+              </div>
             </div>
-            <div class="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
-              <i class="fa-solid fa-calculator text-sm"></i>
+
+            <!-- 2. أكثر بند متكرر وعدد مصاريفه -->
+            <div class="bg-white rounded-2xl p-3.5 shadow-sm border border-amber-200/80 flex items-center justify-between gap-3">
+              <div class="min-w-0">
+                <div class="text-[11px] font-bold text-amber-700">🔁 أكثر بند متكرر</div>
+                <div class="text-sm sm:text-base font-extrabold text-slate-800 mt-0.5 truncate" title="${escapeHtml(topFreqItem.name)}">
+                  ${escapeHtml(topFreqItem.name)}
+                </div>
+                <div class="text-[11px] font-bold text-amber-600 mt-0.5 truncate">
+                  عدد مصاريفه: ${countWord(topFreqItem.count)} • (${formatDZD(topFreqItem.total)})
+                </div>
+              </div>
+              <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center font-extrabold text-xs shrink-0 border border-amber-200">
+                ×${topFreqItem.count}
+              </div>
+            </div>
+
+            <!-- 3. الأعلى تكلفة في القائمة -->
+            <div class="bg-white rounded-2xl p-3.5 shadow-sm border border-indigo-200/80 flex items-center justify-between gap-3">
+              <div class="min-w-0">
+                <div class="text-[11px] font-bold text-indigo-700">🔥 الأعلى تكلفة</div>
+                <div class="text-sm sm:text-base font-extrabold text-slate-800 mt-0.5 truncate" title="${escapeHtml(topSpentItem.name)}">
+                  ${escapeHtml(topSpentItem.name)}
+                </div>
+                <div class="text-[11px] font-bold text-indigo-600 mt-0.5 truncate">
+                  إجمالي: ${formatDZD(topSpentItem.total)} (${opWord(topSpentItem.count)})
+                </div>
+              </div>
+              <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 border border-indigo-200">
+                <i class="fa-solid fa-arrow-trend-up text-sm"></i>
+              </div>
             </div>
           </div>
+        `;
+      }
 
-          <!-- 2. أكثر بند متكرر وعدد مصاريفه -->
-          <div class="bg-white rounded-2xl p-3.5 shadow-sm border border-amber-200/80 flex items-center justify-between gap-3">
-            <div class="min-w-0">
-              <div class="text-[11px] font-bold text-amber-700">🔁 أكثر بند متكرر</div>
-              <div class="text-sm sm:text-base font-extrabold text-slate-800 mt-0.5 truncate" title="${escapeHtml(topFreqItem.name)}">
-                ${escapeHtml(topFreqItem.name)}
+      let loanStatsHtml = '';
+      if (envFilter !== 'ALL' && envLoans.length > 0) {
+        const borrowedInLoans = envLoans.filter(l => l.toEnvelope === envFilter);
+        const takenOutLoans = envLoans.filter(l => l.fromEnvelope === envFilter);
+
+        const totalBorrowedInOrig = borrowedInLoans.reduce((s, l) => s + (Number(l.amount) || 0), 0);
+        const totalBorrowedInNet = borrowedInLoans.reduce((s, l) => {
+          return s + (l.type === 'تحويل للادخار' ? (Number(l.amount) || 0) : (Number(l.remainingAmount) || 0));
+        }, 0);
+
+        const totalTakenOutOrig = takenOutLoans.reduce((s, l) => s + (Number(l.amount) || 0), 0);
+        const totalTakenOutNet = takenOutLoans.reduce((s, l) => {
+          return s + (l.type === 'تحويل للادخار' ? (Number(l.amount) || 0) : (Number(l.remainingAmount) || 0));
+        }, 0);
+
+        loanStatsHtml = `
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 ${expenseStatsHtml ? 'mt-2.5' : ''}">
+            <div class="bg-emerald-50/70 rounded-2xl p-3 border border-emerald-200/80 flex items-center justify-between gap-3">
+              <div class="min-w-0">
+                <div class="text-[11px] font-bold text-emerald-800">📥 استلافات قام بها الظرف (${opWord(borrowedInLoans.length)})</div>
+                <div class="text-sm sm:text-base font-extrabold text-emerald-700 mt-0.5">+ ${formatDZD(totalBorrowedInOrig)}</div>
+                <div class="text-[10px] text-emerald-700/80 mt-0.5">المضاف فعلياً لرصيد الظرف حالياً: <b>+${formatDZD(totalBorrowedInNet)}</b></div>
               </div>
-              <div class="text-[11px] font-bold text-amber-600 mt-0.5 truncate">
-                عدد مصاريفه: ${countWord(topFreqItem.count)} • (${formatDZD(topFreqItem.total)})
+              <div class="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                <i class="fa-solid fa-arrow-down-long text-xs"></i>
               </div>
             </div>
-            <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center font-extrabold text-xs shrink-0 border border-amber-200">
-              ×${topFreqItem.count}
+
+            <div class="bg-amber-50/70 rounded-2xl p-3 border border-amber-200/80 flex items-center justify-between gap-3">
+              <div class="min-w-0">
+                <div class="text-[11px] font-bold text-amber-800">📤 استلافات أُخذت من الظرف (${opWord(takenOutLoans.length)})</div>
+                <div class="text-sm sm:text-base font-extrabold text-amber-700 mt-0.5">- ${formatDZD(totalTakenOutOrig)}</div>
+                <div class="text-[10px] text-amber-700/80 mt-0.5">المخصوم فعلياً من رصيد الظرف حالياً: <b>-${formatDZD(totalTakenOutNet)}</b></div>
+              </div>
+              <div class="w-9 h-9 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+                <i class="fa-solid fa-arrow-up-long text-xs"></i>
+              </div>
             </div>
           </div>
+        `;
+      }
 
-          <!-- 3. الأعلى تكلفة في القائمة -->
-          <div class="bg-white rounded-2xl p-3.5 shadow-sm border border-indigo-200/80 flex items-center justify-between gap-3">
-            <div class="min-w-0">
-              <div class="text-[11px] font-bold text-indigo-700">🔥 الأعلى تكلفة</div>
-              <div class="text-sm sm:text-base font-extrabold text-slate-800 mt-0.5 truncate" title="${escapeHtml(topSpentItem.name)}">
-                ${escapeHtml(topSpentItem.name)}
-              </div>
-              <div class="text-[11px] font-bold text-indigo-600 mt-0.5 truncate">
-                إجمالي: ${formatDZD(topSpentItem.total)} (${opWord(topSpentItem.count)})
-              </div>
-            </div>
-            <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 border border-indigo-200">
-              <i class="fa-solid fa-arrow-trend-up text-sm"></i>
-            </div>
-          </div>
-        </div>
-      `;
+      statsContainer.innerHTML = expenseStatsHtml + loanStatsHtml;
     }
   }
 
-  if (list.length === 0) {
+  if (list.length === 0 && envLoans.length === 0) {
     container.innerHTML = `
       <div class="bg-white rounded-2xl p-8 text-center border border-slate-200/70">
         <i class="fa-solid fa-receipt text-3xl text-slate-300 mb-2"></i>
-        <p class="text-sm text-slate-600 font-bold">لا توجد مصاريف مسجلة في هذه الفترة</p>
+        <p class="text-sm text-slate-600 font-bold">لا توجد مصاريف أو استلافات مسجلة في هذه الفترة</p>
         <p class="text-xs text-slate-400 mt-1">يمكنك تغيير الشهر من القائمة العلوية (مثلاً: أكتوبر 2026 أو كل الفترات) أو إضافة مصروف جديد</p>
       </div>
     `;
     return;
   }
 
-  container.innerHTML = list.map(exp => {
+  // دمج المصاريف مع استلافات الظرف (إن وجدت) وترتيبها زمنياً من الأحدث إلى الأقدم
+  const combinedItems = [
+    ...list.map(exp => ({ itemKind: 'EXPENSE', date: String(exp.date || ''), data: exp })),
+    ...envLoans.map(loan => ({ itemKind: 'LOAN', date: String(loan.date || ''), data: loan }))
+  ].sort((a, b) => b.date.localeCompare(a.date));
+
+  container.innerHTML = combinedItems.map(item => {
+    if (item.itemKind === 'LOAN') {
+      const loan = item.data;
+      const isIncoming = loan.toEnvelope === envFilter;
+      const isPermanent = loan.type === 'تحويل للادخار';
+      const effectiveAmt = isPermanent ? (Number(loan.amount) || 0) : (Number(loan.remainingAmount) || 0);
+
+      const cardBorder = isIncoming
+        ? 'border-emerald-200/90 bg-emerald-50/20'
+        : 'border-amber-200/90 bg-amber-50/20';
+      const iconStyle = isIncoming
+        ? 'bg-emerald-100 text-emerald-700'
+        : 'bg-amber-100 text-amber-700';
+      const iconClass = isIncoming
+        ? 'fa-hand-holding-dollar'
+        : 'fa-right-left';
+      const dirBadge = isIncoming
+        ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
+        : 'bg-amber-100 text-amber-800 border-amber-200';
+      const dirText = isIncoming
+        ? (isPermanent ? '📥 تحويل وارد للظرف' : '📥 استلاف قام به الظرف')
+        : (isPermanent ? '📤 تحويل مأخوذ من الظرف' : '📤 سلفة أُخذت من الظرف');
+      const otherEnvLabel = isIncoming
+        ? `من ظرف: ${escapeHtml(loan.fromEnvelope)}`
+        : `إلى ظرف: ${escapeHtml(loan.toEnvelope)}`;
+      const amountColor = isIncoming ? 'text-emerald-600' : 'text-amber-600';
+      const sign = isIncoming ? '+' : '-';
+
+      let statusBadge = 'bg-amber-50 text-amber-700 border-amber-200';
+      if (loan.status === 'تم الإرجاع' || loan.status === 'تم التحويل') {
+        statusBadge = 'bg-emerald-50 text-emerald-700 border-emerald-200';
+      } else if (loan.status === 'خطأ') {
+        statusBadge = 'bg-red-50 text-red-700 border-red-200';
+      }
+
+      return `
+        <div class="bg-white rounded-2xl p-3.5 sm:p-4 shadow-sm border ${cardBorder} flex flex-wrap sm:flex-nowrap items-center justify-between gap-3">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-10 h-10 rounded-xl ${iconStyle} flex items-center justify-center font-bold shrink-0">
+              <i class="fa-solid ${iconClass}"></i>
+            </div>
+            <div class="min-w-0">
+              <div class="flex flex-wrap items-center gap-1.5">
+                <span class="px-2 py-0.5 rounded-md border text-[11px] font-extrabold ${dirBadge}">${dirText}</span>
+                <span class="font-bold text-slate-800 text-sm sm:text-base truncate">${otherEnvLabel}</span>
+                <span class="px-2 py-0.5 rounded-md border text-[10px] font-bold ${statusBadge}">${escapeHtml(loan.status)}</span>
+              </div>
+              <div class="flex flex-wrap items-center gap-2 text-xs text-slate-500 mt-1">
+                <span>السبب: <b class="text-slate-700">${escapeHtml(loan.reason || 'بدون سبب')}</b></span>
+                ${!isPermanent ? `<span>• الأصلي: <b>${formatDZD(loan.amount)}</b> | المرجع: <b class="text-emerald-600">${formatDZD(loan.repaidAmount)}</b> | المتبقي: <b class="text-rose-600">${formatDZD(loan.remainingAmount)}</b></span>` : ''}
+                <span dir="ltr" class="text-slate-400"><i class="fa-regular fa-calendar ml-1"></i>${escapeHtml(loan.date)}</span>
+                ${loan.note ? `<span class="text-slate-400">• ${escapeHtml(loan.note)}</span>` : ''}
+              </div>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-3 shrink-0 mr-auto sm:mr-0">
+            <div class="text-left">
+              <span class="text-base sm:text-lg font-extrabold ${amountColor}" dir="ltr">${sign} ${formatDZD(loan.amount)}</span>
+              ${(!isPermanent && Number(loan.repaidAmount) > 0) ? `<div class="text-[10px] text-slate-400">الأثر الحالي: ${sign}${formatDZD(effectiveAmt)}</div>` : ''}
+            </div>
+            <div class="flex items-center gap-1">
+              ${loan.type === 'سلفة مؤقتة' && loan.remainingAmount > 0 ? `
+                <button
+                  onclick="quickRepayLoan(${loan.rowIndex})"
+                  class="px-2 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold flex items-center gap-1 transition"
+                  title="تسديد السلفة"
+                >
+                  <i class="fa-solid fa-check text-[10px]"></i>
+                  <span class="hidden sm:inline">تسديد</span>
+                </button>
+              ` : ''}
+              <button
+                onclick="openLoanModal(${loan.rowIndex})"
+                class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-blue-50 text-slate-600 hover:text-blue-600 flex items-center justify-center transition"
+                title="تعديل الاستلاف"
+              >
+                <i class="fa-solid fa-pen text-xs"></i>
+              </button>
+              <button
+                onclick="handleDeleteLoan(${loan.rowIndex})"
+                class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-600 flex items-center justify-center transition"
+                title="حذف الاستلاف"
+              >
+                <i class="fa-solid fa-trash text-xs"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    const exp = item.data;
     const isCash = exp.paymentMethod === 'كاش';
     const payBadge = isCash
       ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
@@ -3587,6 +3752,8 @@ window.closeSweepModal = closeSweepModal;
 window.handleExecuteSweep = handleExecuteSweep;
 window.resetToSheetSnapshot = resetToSheetSnapshot;
 window.toggleEnvelopeExpand = toggleEnvelopeExpand;
+window.toggleCategoryCollapse = toggleCategoryCollapse;
+window.quickRepayLoan = quickRepayLoan;
 window.cycleEnvelopeCategoryFilter = cycleEnvelopeCategoryFilter;
 window.cycleLoanTypeFilter = cycleLoanTypeFilter;
 window.handleFloatingAddClick = handleFloatingAddClick;
