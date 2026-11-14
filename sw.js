@@ -1,4 +1,4 @@
-const CACHE_NAME = 'budget-pwa-v39-accounts-in-dashboard-only';
+const CACHE_NAME = 'budget-pwa-v40-clean-category-headers';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();

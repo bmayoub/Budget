@@ -1289,7 +1289,7 @@ function renderDashboardEnvelopesGrid() {
             <span class="text-base">${icon}</span>
             <span class="font-extrabold text-sm sm:text-base">تصنيف: ${majorCat} (${catEnvs.length} أظرفة)</span>
           </div>
-          <div class="flex flex-wrap items-center gap-2 sm:gap-3 text-xs">
+          <div class="hidden lg:flex flex-wrap items-center gap-2 sm:gap-3 text-xs">
             <span class="bg-white/15 px-2.5 py-1 rounded-lg">المخصص: <b>${formatDZD(catAlloc)}</b></span>
             <span class="bg-white/15 px-2.5 py-1 rounded-lg">تغذية الشهر: <b>${formatDZD(catFed)}</b></span>
             <span class="bg-white/15 px-2.5 py-1 rounded-lg">مصروف الشهر: <b>${formatDZD(catSpent)} (${catPct}%)</b></span>
