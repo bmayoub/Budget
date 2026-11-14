@@ -3381,7 +3381,28 @@ function escapeHtml(str) {
     .replace(/'/g, '&#039;');
 }
 
+function toggleAccountsSection(event) {
+  if (event && event.target && event.target.closest('button')) return;
+  const wrap = document.getElementById('accountsGridWrap');
+  const header = document.getElementById('accountsHeaderBar');
+  const chevron = document.getElementById('accountsCollapseChevron');
+  if (!wrap) return;
+
+  const isHidden = wrap.classList.toggle('hidden');
+  if (chevron) {
+    chevron.classList.toggle('rotate-180', !isHidden);
+  }
+  if (header) {
+    if (isHidden) {
+      header.classList.remove('border-b', 'border-slate-100', 'pb-2.5');
+    } else {
+      header.classList.add('border-b', 'border-slate-100', 'pb-2.5');
+    }
+  }
+}
+
 // ربط الدوال العامة بالكائن window لضمان عمل كافة عناصر HTML
+window.toggleAccountsSection = toggleAccountsSection;
 window.openTransferModal = openTransferModal;
 window.closeTransferModal = closeTransferModal;
 window.openTransfersListModal = openTransfersListModal;

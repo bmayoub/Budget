@@ -1,4 +1,4 @@
-const CACHE_NAME = 'budget-pwa-v35-kpi-in-feeding-only';
+const CACHE_NAME = 'budget-pwa-v36-collapsible-accounts';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
