@@ -1372,14 +1372,25 @@ function renderDashboardEnvelopesGrid() {
                             قسط: ${formatDZD(env.totalMonthlyAllocated)}/ش
                           </span>
                         </div>
-                        <button
-                          type="button"
-                          onclick="event.stopPropagation(); openExpenseModal(null, '${escapeHtml(env.name)}')"
-                          class="bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-bold px-2.5 py-1 rounded-lg flex items-center gap-1 shadow-2xs transition active:scale-95"
-                        >
-                          <i class="fa-solid fa-plus text-[10px]"></i>
-                          <span>تسجيل مصروف</span>
-                        </button>
+                        <div class="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onclick="openEnvelopeExpenses('${escapeHtml(env.name)}', event)"
+                            class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-bold px-2.5 py-1 rounded-lg flex items-center gap-1 border border-slate-200 transition active:scale-95"
+                            title="عرض قائمة المصاريف المفلترة حسب هذا الظرف"
+                          >
+                            <i class="fa-solid fa-receipt text-[10px] text-indigo-600"></i>
+                            <span>سجل المصاريف</span>
+                          </button>
+                          <button
+                            type="button"
+                            onclick="event.stopPropagation(); openExpenseModal(null, '${escapeHtml(env.name)}')"
+                            class="bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-bold px-2.5 py-1 rounded-lg flex items-center gap-1 shadow-2xs transition active:scale-95"
+                          >
+                            <i class="fa-solid fa-plus text-[10px]"></i>
+                            <span>تسجيل مصروف</span>
+                          </button>
+                        </div>
                       </div>
 
                       <div class="grid grid-cols-3 gap-1 text-center text-[11px] bg-indigo-50/40 rounded-lg p-1.5 border border-indigo-100/60">
@@ -1456,14 +1467,25 @@ function renderDashboardEnvelopesGrid() {
                           ${escapeHtml(env.group)}
                         </span>
                       </div>
-                      <button
-                        type="button"
-                        onclick="event.stopPropagation(); openExpenseModal(null, '${escapeHtml(env.name)}')"
-                        class="bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold px-2.5 py-1 rounded-lg flex items-center gap-1 shadow-2xs transition active:scale-95"
-                      >
-                        <i class="fa-solid fa-plus text-[10px]"></i>
-                        <span>تسجيل مصروف</span>
-                      </button>
+                      <div class="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onclick="openEnvelopeExpenses('${escapeHtml(env.name)}', event)"
+                          class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-bold px-2.5 py-1 rounded-lg flex items-center gap-1 border border-slate-200 transition active:scale-95"
+                          title="عرض قائمة المصاريف المفلترة حسب هذا الظرف"
+                        >
+                          <i class="fa-solid fa-receipt text-[10px] text-emerald-600"></i>
+                          <span>سجل المصاريف</span>
+                        </button>
+                        <button
+                          type="button"
+                          onclick="event.stopPropagation(); openExpenseModal(null, '${escapeHtml(env.name)}')"
+                          class="bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold px-2.5 py-1 rounded-lg flex items-center gap-1 shadow-2xs transition active:scale-95"
+                        >
+                          <i class="fa-solid fa-plus text-[10px]"></i>
+                          <span>تسجيل مصروف</span>
+                        </button>
+                      </div>
                     </div>
 
                     <div class="grid grid-cols-3 gap-1 text-center text-[11px] bg-slate-50 rounded-lg p-1.5 border border-slate-100">
@@ -3401,7 +3423,28 @@ function toggleAccountsSection(event) {
   }
 }
 
+function openEnvelopeExpenses(envName, event) {
+  if (event) event.stopPropagation();
+  const filterEnv = document.getElementById('filterEnvelopeSelect');
+  if (filterEnv) {
+    filterEnv.value = envName;
+  }
+  const searchInput = document.getElementById('searchExpenseInput');
+  if (searchInput) {
+    searchInput.value = '';
+  }
+  const paySelect = document.getElementById('filterPaymentSelect');
+  if (paySelect) {
+    paySelect.value = 'ALL';
+  }
+  switchTab('expenses');
+  renderExpensesList();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  showToast(`🧾 عرض مصاريف ظرف: ${envName}`);
+}
+
 // ربط الدوال العامة بالكائن window لضمان عمل كافة عناصر HTML
+window.openEnvelopeExpenses = openEnvelopeExpenses;
 window.toggleAccountsSection = toggleAccountsSection;
 window.openTransferModal = openTransferModal;
 window.closeTransferModal = closeTransferModal;

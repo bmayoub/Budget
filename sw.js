@@ -1,4 +1,4 @@
-const CACHE_NAME = 'budget-pwa-v36-collapsible-accounts';
+const CACHE_NAME = 'budget-pwa-v37-envelope-expenses-shortcut';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
